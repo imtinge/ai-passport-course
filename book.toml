@@ -9,10 +9,9 @@ src = "src"
 default-theme = "ayu"
 preferred-dark-theme = "ayu"
 no-section-label = false
-# 官方硬件基线仓库。书里每个"出处"都指向这里，读者可一键跳去核对源码。
-# 主仓库 GitHub：https://github.com/folotoy/ai-passport
-# 国内镜像 Gitee（克隆更快，但 mdBook 的"查看源码"链接以 GitHub 为准）：
-git-repository-url = "https://github.com/folotoy/ai-passport"
+# mdBook 的"查看源码/编辑/历史"链接指向本书仓库（GitHub Pages 发布源）。
+# 硬件基线源码仍见第 03 章与附录 B（folotoy/ai-passport）。
+git-repository-url = "https://github.com/imtinge/ai-passport-course"
 
 [output.html.print]
 enable = true
