@@ -1,0 +1,26 @@
+[book]
+title = "AI Passport C 语言自学教材"
+authors = ["WorkBuddy"]
+language = "zh-CN"
+description = "面向会写 C、没碰过 ESP-IDF 的程序员：从零开始给 FoloToy AI Passport 写可穿戴应用"
+src = "src"
+
+[output.html]
+default-theme = "ayu"
+preferred-dark-theme = "ayu"
+no-section-label = false
+# 官方硬件基线仓库。书里每个"出处"都指向这里，读者可一键跳去核对源码。
+# 主仓库 GitHub：https://github.com/folotoy/ai-passport
+# 国内镜像 Gitee（克隆更快，但 mdBook 的"查看源码"链接以 GitHub 为准）：
+git-repository-url = "https://github.com/folotoy/ai-passport"
+
+[output.html.print]
+enable = true
+
+[output.html.fold]
+enable = true
+level = 2
+
+[output.html.search]
+enable = true
+limit-results = 30
