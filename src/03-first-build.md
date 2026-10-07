@@ -96,11 +96,11 @@ sudo apt-get install -y git wget curl flex bison gperf python3 python3-pip \
 Fedora 用 `dnf install`（`libffi-devel openssl-devel libusb1-devel gcc gcc-c++ make`），
 Arch 用 `pacman -S --needed base-devel git wget curl flex bison gperf python cmake ninja ccache dfu-util libusb`。
 
-**Windows**：安装 ESP-IDF 官方安装器，然后**用开始菜单里的 "ESP-IDF CMD" 终端**
+**Windows**：安装 ESP-IDF 官方安装器，然后**用开始菜单里的 “ESP-IDF CMD” 终端**
 （它已经帮你 source 好了环境）。不要用普通 CMD 或 PowerShell 硬来。
 
 > 小智项目的 README 里有一句务实的提醒：
-> "Linux 比 Windows 更好，编译速度快，也免去驱动问题的困扰。"
+> “Linux 比 Windows 更好，编译速度快，也免去驱动问题的困扰。”
 
 **WSL2**：可以在 WSL 里写代码和编译，但 **USB 设备默认不会出现在 WSL 里**，
 要用微软的 `usbipd-win` 转发：
@@ -113,7 +113,7 @@ usbipd attach --wsl --busid 2-3
 
 转发后 Ubuntu 里 `ls /dev/ttyACM0` 能看到设备即可。
 **拔线/休眠会断开，重新 `attach` 就行**；不要两边同时开同一个串口。
-嫌麻烦就走"WSL 编译 + Windows 烧录"——但工程要放在 WSL 的 `~/` 下，
+嫌麻烦就走“WSL 编译 + Windows 烧录”——但工程要放在 WSL 的 `~/` 下，
 放在 `/mnt/d/` 上构建会非常慢。
 
 ### 三个真实的坑
@@ -189,7 +189,7 @@ idf.py build
 > **⚠️ 坑：`sdkconfig.defaults` 改了，已有 `sdkconfig` 不会自动同步。**
 > 你改了 `sdkconfig.defaults`（或拉了上游更新），直接 `idf.py build`
 > **不会**把新默认值灌进已经存在的 `sdkconfig`——配置项会静默保持旧值，
-> 于是"我明明开了这个选项啊"。`idf.py fullclean` 也做不到。
+> 于是“我明明开了这个选项啊”。`idf.py fullclean` 也做不到。
 > 正确做法：**先备份有意的本地设置，再跑一次 `idf.py set-target esp32c3`**。
 > 第 19 章的 `CONFIG_LV_TXT_ENC_UTF8=y` 就是这个坑的高频受害者。
 
@@ -229,7 +229,7 @@ Write-Host ('NINJA_EXIT=' + $LASTEXITCODE)
 再 `& ninja`。但这套脚本在某些机器上会因 `idf-env` 查询返回 null 而**静默装配失败**——
 脚本不报错，可 PATH 里既没有 ninja 也没有 Python。
 结果是下一行 `& ninja` 根本没执行，日志是空的、二进制时间戳还是上一次的，
-看起来却像"构建成功"。判据：**构建完看一眼 `.log` 有没有内容、二进制 mtime 有没有变。**
+看起来却像“构建成功”。判据：**构建完看一眼 `.log` 有没有内容、二进制 mtime 有没有变。**
 
 **② 重定向用 `*>`，不要用 `|`。**
 
@@ -243,10 +243,10 @@ Write-Host ('NINJA_EXIT=' + $LASTEXITCODE)
 原因是 Windows PowerShell 在收到 native 命令写到 stderr 的内容时会触发
 `NativeCommandError`，而 IDF 工具链（尤其 msys 的 `git-submodule` 之类）
 往 stderr 写东西很正常。用 `*>` 全流重定向到文件就绕开了这个行为。
-**作为方法论：Windows 上跑长构建，一律"命令 + `*>` 落盘 + 回来读日志"，
+**作为方法论：Windows 上跑长构建，一律“命令 + `*>` 落盘 + 回来读日志”，
 不要指望管道回显。**
 
-**③ 校验退出码，别只看"跑完了"。**
+**③ 校验退出码，别只看“跑完了”。**
 
 ```powershell
 & $ninja -j4 -C build *> build\build.log
@@ -260,13 +260,13 @@ grep -c -iE "error:|warning:" build/build.log   # 期望 0
 tail -5 build/build.log
 ```
 
-> 这套"ninja 绝对路径 + `*>` 落盘 + 查退出码"的组合，
+> 这套“ninja 绝对路径 + `*>` 落盘 + 查退出码”的组合，
 > 本质是把不确定环节收敛到一个地方：**日志**。
-> 编译这个动作本身不难，难的是"你以为它在编译，其实它没有"。
+> 编译这个动作本身不难，难的是“你以为它在编译，其实它没有”。
 
 同样的思路适用于烧录：`python -m esptool ... write_flash` 之后也要确认
 日志里有 `Hash of data verified` 和 `Hard resetting`，
-而不是只看命令"跑完了"。
+而不是只看命令“跑完了”。
 
 ### 3.3.2 加速重复编译：ccache
 
@@ -307,8 +307,8 @@ idf.py build
 - **不要例行把整个 ESP-IDF 安装目录、工具链目录或工程加进排除列表，
   也不要关闭实时防护。**
 
-也就是说：先量，再改；别把"构建慢"默认归因于杀软。
-真正常见的慢因其实是首次拉托管组件、没有 ccache、以及 3.3.1 那种"命令根本没跑起来"。
+也就是说：先量，再改；别把“构建慢”默认归因于杀软。
+真正常见的慢因其实是首次拉托管组件、没有 ccache、以及 3.3.1 那种“命令根本没跑起来”。
 
 ## 3.4 烧录与监控
 
@@ -358,7 +358,7 @@ idf.py merge-bin -o build/ai-passport-firmware.bin
 0x010000    应用镜像 factory（占满剩余）       FoloToy-AI-Passport.bin
 ```
 
-### 3.5.2 两个 `.bin` 别搞混（这是能烧"砖"的坑）
+### 3.5.2 两个 `.bin` 别搞混（这是能烧“砖”的坑）
 
 | 产物 | 内容 | 烧录地址 | 用途 |
 | --- | --- | --- | --- |
@@ -366,7 +366,7 @@ idf.py merge-bin -o build/ai-passport-firmware.bin
 | `FoloToy-AI-Passport-full.bin` | bootloader + 分区表 + app（空隙已填充） | **0x0 整片** | 空白板、出厂、发布 |
 
 > ⚠️ **`FoloToy-AI-Passport.bin` 绝对不能烧到 `0x0`。**
-> 它只是应用，缺 bootloader 和分区表。烧错的表现是"烧完反复重启、日志乱码"——
+> 它只是应用，缺 bootloader 和分区表。烧错的表现是“烧完反复重启、日志乱码”——
 > 这时整片重刷 `full.bin` 就能救回来。
 
 官方门禁产出的就是 `full.bin`（`tools/validate.sh` → `merge-bin` →
@@ -396,10 +396,10 @@ idf.py flash            idf.py erase-flash            idf.py merge-bin
 ESP32-C3 **几乎不可能真正变砖**——bootloader 在出厂 ROM 里，芯片永远能响应下载。
 按这个顺序排查：
 
-1. **换线、直连电脑**（80% 的"砖"是数据线或 Hub 的问题）；
+1. **换线、直连电脑**（80% 的“砖”是数据线或 Hub 的问题）；
 2. 手动进下载模式的 strapping 脚是 **GPIO9**（上电/复位时拉低）。
    ⚠️ **三个功能键接在 GPIO0 的 ADC 分压网络上，不能当 BOOT 键用**——
-   别照抄"按住 BOOT 再按 EN"的老教程；
+   别照抄“按住 BOOT 再按 EN”的老教程；
    正常情况 esptool 会通过原生 USB-Serial-JTAG 自动复位进下载模式，无需手动操作；
 3. 整片刷 `full.bin` 让三个镜像回到一致状态；
 4. 还不行就降波特率：`-b 115200`；
@@ -447,7 +447,7 @@ idf.py erase-flash          # 全片擦除（谨慎）
 ## 3.7 跑起来之后你会看到什么
 
 **官方基线（仓库 `folotoy/ai-passport`）开机进「测试菜单」——七张卡片，不是直达某个玩法。**
-这是设计如此：这个菜单是用来**验证硬件**的（见下方"衍生应用规则"），不是给你套壳的应用模板。
+这是设计如此：这个菜单是用来**验证硬件**的（见下方“衍生应用规则”），不是给你套壳的应用模板。
 
 `main/main.c` 里有一个 `DEMOS[]` 数组，注册了 **7 项**（下标 0~6）：
 
@@ -491,7 +491,7 @@ idf.py erase-flash          # 全片擦除（谨慎）
 ## 3.8 小结
 
 - 版本：**学开发用 5.5.3，做 AI 语音直接上 6.1**；
-- Windows 用 "ESP-IDF CMD" 终端，Linux 记得 `source export.sh`；
+- Windows 用 “ESP-IDF CMD” 终端，Linux 记得 `source export.sh`；
 - `idf.py build` 跑不起来时用 **ninja 绝对路径 + `*>` 落盘**（3.3.1），并校验退出码；
 - `set-target esp32c3` 只在首次/换芯片时跑；
 - 监视器退出是 `Ctrl+]`；

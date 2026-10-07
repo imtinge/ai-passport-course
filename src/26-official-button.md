@@ -34,13 +34,13 @@ static void tick(lv_timer_t *t) {
 }
 ```
 
-**这是"在屏幕上显示实时传感器数据"的标准做法**：`lv_timer_create(tick, 100, NULL)` 注册一个
+**这是“在屏幕上显示实时传感器数据”的标准做法**：`lv_timer_create(tick, 100, NULL)` 注册一个
 100 ms 周期回调，回调跑在 LVGL 任务内、已持锁，所以能直接 `lv_label_set_text` 而不用自己加锁。
 `bsp_button_read_mv()` 返回当前 ADC 毫伏值（三键共用一个 ADC 分压网络，不同键对应不同电压窗口，
 见第 6 章）。
 
 > 为什么用 `lv_timer` 而不是直接在 `key()` 里读？因为电压要**持续**显示、不依赖按键，
-> 而 `key()` 只在按键时触发。`lv_timer` 是 LVGL 里的"软定时器"，是板子上刷新动态数据的首选。
+> 而 `key()` 只在按键时触发。`lv_timer` 是 LVGL 里的“软定时器”，是板子上刷新动态数据的首选。
 
 ## 26.3 事件日志：一个滚动 ring buffer
 
@@ -68,7 +68,7 @@ static void log_push(const char *text) {
 ```
 
 **可抄点**：固定大小的二维 `char` 数组当 ring buffer，满了就 `memcpy` 上移（O(n) 但 n=6 无所谓），
-再 `strcat` 拼成多行字符串喂给一个 `lv_label`。板子内存紧张，**不要**为了"日志"去 `malloc` 动态缓冲——
+再 `strcat` 拼成多行字符串喂给一个 `lv_label`。板子内存紧张，**不要**为了“日志”去 `malloc` 动态缓冲——
 这种静态数组才是嵌入式正道。每行 32 字节、`LOG_LINES 6` 行，总共不到 200 字节，固定占用。
 
 ## 26.4 `enter` / `exit`：建标签 + 起 timer；退出删 timer
@@ -101,7 +101,7 @@ void demo_button_exit(void) {
 
 **铁律：`lv_timer` 必须在 `exit` 里 `lv_timer_delete`**。否则页面删了、timer 还在跑，回调里访问的
 `s_mv`/`s_log` 已成野指针 → 崩溃。Battery 页（第 28 章）也是同一套：`enter` 建 timer、`exit` 删 timer。
-凡是"进页面注册、出页面必须注销"的资源（timer、任务、事件处理器、Wi-Fi/BLE 栈），都要在 `exit`/`stop` 对称清理。
+凡是“进页面注册、出页面必须注销”的资源（timer、任务、事件处理器、Wi-Fi/BLE 栈），都要在 `exit`/`stop` 对称清理。
 
 ## 26.5 `key`：只把事件推入日志
 
@@ -121,13 +121,13 @@ void demo_button_key(bsp_btn_t btn, bsp_btn_ev_t ev) {
 两个细节：
 
 1. **边界保护**：`btn`/`ev` 是新版 `bsp_button` 的枚举，先确认在 `BTN_NAME`/`EV_NAME` 范围内再引用，
-   防止未来枚举扩值导致数组越界。这种防御在"事件来自硬件"的代码里很值得。
+   防止未来枚举扩值导致数组越界。这种防御在“事件来自硬件”的代码里很值得。
 2. **`key()` 里才加锁**：因为 `key` 不预持锁。`log_push` 内部会 `lv_label_set_text`，所以包在
    `bsp_lvgl_lock(250)` 内；`250` 毫秒超时拿不到就放弃本次更新，绝不阻塞按键派发。
 
 > `BTN_NAME`/`EV_NAME` 是 `{"UP","DOWN","OK"}` 和 `{"PRESS","CLICK","DOUBLE","LONG"}`
 > 两个字符串表（`demo_button.c:18-19`）。四类事件（PRESS/CLICK/DOUBLE/LONG）就是第 6 章讲的
-> `esp_button` 组件产出的事件——这个 demo 把它们全部如实打印，是调试"我的双击怎么不触发"的利器。
+> `esp_button` 组件产出的事件——这个 demo 把它们全部如实打印，是调试“我的双击怎么不触发”的利器。
 
 ## 26.6 这个 demo 能抄什么
 
@@ -136,4 +136,4 @@ void demo_button_key(bsp_btn_t btn, bsp_btn_ev_t ev) {
 - **`enter` 建 timer、`exit` 必删 timer** 的对称纪律；
 - **换分压电阻后用它重标 `BSP_BTN_MV_TABLE`**：这是它存在的首要价值。
 
-和第 6 章的关系：第 6 章讲 ADC 分压 + 四类事件的原理，本章是官方把原理变成"可目视的标定工具"。
+和第 6 章的关系：第 6 章讲 ADC 分压 + 四类事件的原理，本章是官方把原理变成“可目视的标定工具”。

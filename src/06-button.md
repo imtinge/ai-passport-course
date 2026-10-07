@@ -38,7 +38,7 @@ typedef enum {
 确定 长按      页面内 = 返回菜单（统一拦截）
 ```
 
-**"确定长按返回"是全局约定**，由最外层统一拦截，页面自己不用处理。
+**“确定长按返回”是全局约定**，由最外层统一拦截，页面自己不用处理。
 改这个约定要在文档里明确写出来，否则用户会以为设备卡住了。
 
 ## 6.3 核心规则：回调里不许干活
@@ -166,9 +166,9 @@ bsp_button_read();      // DOOM 的 bsp_doom 里是读当前按键状态
 ```
 
 **轮询适合游戏**——游戏本来就有主循环，每帧读一次按键状态最自然，
-而且能同时检测"多个键一起按"。
+而且能同时检测“多个键一起按”。
 
-轮询的缺点是拿不到"长按""双击"这种时序事件，得自己计时。
+轮询的缺点是拿不到“长按”“双击”这种时序事件，得自己计时。
 **做菜单用回调，做游戏用轮询。**
 
 ## 6.6 按键相关的两个真实坑
@@ -176,9 +176,9 @@ bsp_button_read();      // DOOM 的 bsp_doom 里是读当前按键状态
 ### 坑 1：ADC1 是 unit 级独占资源
 
 > 源码注释（pax-zhang `components/bsp/src/bsp_button.c`）：
-> "ADC1 是 unit 级独占资源：iot_button 与 `bsp_button_read_mv()` 必须共用同一个
+> “ADC1 是 unit 级独占资源：iot_button 与 `bsp_button_read_mv()` 必须共用同一个
 > oneshot 句柄。谁第二个调 `adc_oneshot_new_unit()` 谁就拿到
-> 'adc1 is already in use'。"
+> ‘adc1 is already in use’。”
 
 解法（小智项目的写法，三个键共用一个 unit）：
 
@@ -203,8 +203,8 @@ adc_button_[kAdcButtonUp] = new AdcButton(adc_cfg);
 ### 坑 2：衰减档必须一致
 
 > 源码注释（同上）：
-> "电压读取的衰减档必须与 button 组件内部的 `ADC_BUTTON_ATTEN` 一致——
-> 通道只被配置一次，两边对不上会让读数与按键阈值错位。"
+> “电压读取的衰减档必须与 button 组件内部的 `ADC_BUTTON_ATTEN` 一致——
+> 通道只被配置一次，两边对不上会让读数与按键阈值错位。”
 
 ```c
 #define BSP_BTN_ATTEN  ADC_ATTEN_DB_12   // 量程约 0~3100mV，覆盖松开态
@@ -224,19 +224,19 @@ esp_sleep_enable_gpio_wakeup();    // IDF 原生
 这也是为什么熄屏序列里有 `bsp_button_sleep_gpio(true)` 这一步。
 
 > 一个社区修过的真实 bug（Shinku 的 README）：
-> "GPIO0 唤醒源此前从未启用（把引脚号当位掩码传入）"。
+> “GPIO0 唤醒源此前从未启用（把引脚号当位掩码传入）”。
 > `esp_sleep_enable_gpio_wakeup()` 要的是**引脚号**，
 > 而 `gpio_wakeup_enable(pin, ...)` 的掩码是 `1ULL << pin`。别混。
 
 ## 6.8 小结
 
 - 四种事件：`PRESS`（游戏）/ `CLICK`（菜单）/ `DOUBLE` / `LONG`（返回）；
-- **回调里不许干活**——标准解法是"入队 + 独立任务"；
+- **回调里不许干活**——标准解法是“入队 + 独立任务”；
 - `xQueueSend(..., 0)`：队列满就丢，绝不阻塞；
 - 做菜单用回调，做游戏用轮询；
 - **ADC1 只能 new 一次 unit**，三个键复用句柄；
 - 熄屏后靠 GPIO 唤醒，ADC 不工作。
 
-下一章讲音频——这块板子上最容易出"玄学 bug"的部分。
+下一章讲音频——这块板子上最容易出“玄学 bug”的部分。
 
-> 官方把"按键事件 + 实时 ADC 电压"做成标定工具的逐行源码，见第 26 章（Button 示例）。
+> 官方把“按键事件 + 实时 ADC 电压”做成标定工具的逐行源码，见第 26 章（Button 示例）。

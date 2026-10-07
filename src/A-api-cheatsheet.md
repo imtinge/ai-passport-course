@@ -222,7 +222,7 @@ esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, handler, NULL)
 ```
 
 事件：`WIFI_EVENT_STA_START` / `STA_CONNECTED` / `STA_DISCONNECTED` / `SCAN_DONE` /
-`WIFI_EVENT_AP_STACONNECTED` → `IP_EVENT_STA_GOT_IP`（★ 唯一"已联网"标志）/
+`WIFI_EVENT_AP_STACONNECTED` → `IP_EVENT_STA_GOT_IP`（★ 唯一“已联网”标志）/
 `IP_EVENT_STA_LOST_IP` / `IP_EVENT_AP_STAIPASSIGNED`（SoftAP 下发 IP）。
 
 断开 reason：`wifi_event_sta_disconnected_t::reason`
@@ -415,7 +415,7 @@ LVGL 池推荐             24 KB
 最低安全剩余堆          30 KB
 ```
 
-## A.11 官方仓库关键文件索引（"去哪儿找"）
+## A.11 官方仓库关键文件索引（“去哪儿找”）
 
 按图索骥用。路径相对于官方基线仓库根目录。
 
@@ -433,13 +433,13 @@ LVGL 池推荐             24 KB
 | 官方工程文档 | `docs/development/engineering/`：`build-and-test`、`firmware-layout`、`coding-conventions`、`lvgl-chinese-fonts`、`wifi-provisioning` |
 | 硬件设计与验收 | `docs/hardware-design/` |
 
-一个有用的观察：**官方仓库带一套"不需要设备就能跑"的主机测试**
+一个有用的观察：**官方仓库带一套“不需要设备就能跑”的主机测试**
 （`tests/` 下的 C 测试 + Python 测试）。这正是第 18.6 节那两级门禁的来源——
-把"能在 PC 上验证的"和"必须插设备验证的"分开，是这套工程规范的核心思路。
+把“能在 PC 上验证的”和“必须插设备验证的”分开，是这套工程规范的核心思路。
 
 ## A.12 动手前红线清单（一页纸）
 
-做设计、估预算、排查"怎么又炸了"之前，先把这张表扫一遍。
+做设计、估预算、排查“怎么又炸了”之前，先把这张表扫一遍。
 每一项都来自前面某章，这里只做**汇总 + 快速定位**，数字变了以原章节为准。
 
 | 红线 | 数字 | 为什么是红线 | 去哪查 |
@@ -457,5 +457,5 @@ LVGL 池推荐             24 KB
 | flash-MMU 页 | 128 个 | mmap 每开一个文件用掉一页，用掉就少 | 9.3 方案 B |
 | 任务栈常见值 | **4096 B** | 含 LVGL 调用时要更大，且用静态栈更稳 | 7.4 / 11.2 纪律 2 |
 
-**使用姿势**：新建一个玩法前，先把"屏幕 + 音频 + 联网 + 字体"各自的峰值堆加起来，
+**使用姿势**：新建一个玩法前，先把“屏幕 + 音频 + 联网 + 字体”各自的峰值堆加起来，
 对照 30 KB 下限看还剩多少；任何一项超出，先回这一页改方案，别等烧进去再救。

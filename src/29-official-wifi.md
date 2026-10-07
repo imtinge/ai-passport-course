@@ -79,13 +79,13 @@ fail:
 
 **两个必须记的官方选择**：
 
-1. **用"分步 checked"而非 `esp_wifi_init()` 的便利创建器**（如 `esp_netif_create_default_wifi_sta`
+1. **用“分步 checked”而非 `esp_wifi_init()` 的便利创建器**（如 `esp_netif_create_default_wifi_sta`
    那类会替你 `assert` 的）。源码注释明说：便利创建器在分配或挂处理失败时**直接 abort 重启**，
-   而这个"可选 demo"要能**失败而不重启**——否则一个没天线/没射频的环境会把板子卡在重启循环。
+   而这个“可选 demo”要能**失败而不重启**——否则一个没天线/没射频的环境会把板子卡在重启循环。
    **复用 Wi-Fi 时，想让应用健壮就走这条 checked 链。**
 2. **`WIFI_STORAGE_RAM` + 不连接**：凭证只存内存，扫描完不连任何 AP，因此这个 demo 不会在 NVS 里
    留下任何东西。`demo_radio_nvs_prepare()` 的注释（`demo_radio.c:18-22`）特别强调：NVS 初始化失败
-   **不自动擦除分区**——示例不能为了起无线就抹掉你未来应用可能存的数据。这是"示例的操守"。
+   **不自动擦除分区**——示例不能为了起无线就抹掉你未来应用可能存的数据。这是“示例的操守”。
 
 ## 29.4 `scan_done` 事件回调：改状态，不直接刷屏
 
@@ -98,7 +98,7 @@ static void scan_done(void *arg, esp_event_base_t base, int32_t id, void *data) 
 ```
 
 事件回调**只改 `s_state`，不碰 LVGL**。真正的列表渲染留给 `tick`（LVGL 任务内，已持锁）。
-这是"**事件回调跨任务、不要直接操作 UI**"的纪律——回调跑在 Wi-Fi 事件任务，直接 `lv_label_set_text`
+这是“**事件回调跨任务、不要直接操作 UI**”的纪律——回调跑在 Wi-Fi 事件任务，直接 `lv_label_set_text`
 会和 LVGL 任务竞争，轻则花屏重则崩。
 
 ## 29.5 `show_scan_results`：取结果 + 限条数 + 格式化
@@ -148,7 +148,7 @@ static void tick(lv_timer_t *timer) {
 ```
 
 `tick` 把 `s_state` 翻译成屏幕文字——UI 永远由 LVGL 任务单方面驱动，事件回调只喂状态。
-这就是"**状态机 + 单点渲染**"模式，比"哪个回调都去刷屏"干净得多。
+这就是“**状态机 + 单点渲染**”模式，比“哪个回调都去刷屏”干净得多。
 
 ## 29.7 `wifi_stack_stop`：逆序回滚（和启动链对称）
 
@@ -164,7 +164,7 @@ static void wifi_stack_stop(void) {
 ```
 
 **资源清理顺序和启动严格对称、逆序**：先停扫描/停 Wi-Fi → 注销事件处理 → deinit → 销毁 netif。
-`demo_wifi_stop()` 直接调它（`:195-199`）。凡是"进页面初始化了一整套栈"的 demo（Wi-Fi、BLE），
+`demo_wifi_stop()` 直接调它（`:195-199`）。凡是“进页面初始化了一整套栈”的 demo（Wi-Fi、BLE），
 `stop` 都要做这种逆序回滚——漏一步就会留下半初始化状态，下次进页面 `esp_wifi_init` 直接报
 `ESP_ERR_WIFI_MODE` 之类。
 
@@ -194,10 +194,10 @@ void demo_wifi_key(bsp_btn_t btn, bsp_btn_ev_t ev) {
 - **事件回调只改 `volatile` 状态，UI 交给 `tick` 单点渲染**；
 - **`stop` 逆序回滚**整套栈。
 
-和第 10 章的关系：第 10 章讲 Wi-Fi 全生命周期的原理与坑，本章是官方把"STA 扫描"做成健壮实例。
+和第 10 章的关系：第 10 章讲 Wi-Fi 全生命周期的原理与坑，本章是官方把“STA 扫描”做成健壮实例。
 
-- 想看"连接 + 重连退避"：第 10.1–10.3 节，可编译版本在 `snippets/08_wifi_sta_connect.c`；
-- 想看"密码怎么进设备"（官方 demo 刻意不做）：[10b 章 配网](10b-provisioning.md)；
-- 想看"拿到网怎么取数据"：[10c 章](10c-network-data.md)，可编译版本在 `snippets/09_http_get_stream.c`。
+- 想看“连接 + 重连退避”：第 10.1–10.3 节，可编译版本在 `snippets/08_wifi_sta_connect.c`；
+- 想看“密码怎么进设备”（官方 demo 刻意不做）：[10b 章 配网](10b-provisioning.md)；
+- 想看“拿到网怎么取数据”：[10c 章](10c-network-data.md)，可编译版本在 `snippets/09_http_get_stream.c`。
 
 官方 demo 止步于扫描，正是为了避免在示例里处理凭证——这一条本身也值得抄。

@@ -12,7 +12,7 @@
 
 **为什么第一拆解它**：它是全部 172 个仓库里**最小且完整**的项目。
 `app_main` 只有 80 行，你能一口气读完整个程序的骨架。
-如果你想找"第一个能读懂、能改动的仓库"，就是它。
+如果你想找“第一个能读懂、能改动的仓库”，就是它。
 
 ## 13.1 工程结构
 
@@ -95,7 +95,7 @@ void app_main(void)
 **启动只有五步**：屏幕 → 按键 → 加载 WAD → 建任务 → 返回。
 
 注意最后一句注释：`app_main` 返回后游戏在自己任务里跑。
-这就是第 2 章说的"写法 A"。
+这就是第 2 章说的“写法 A”。
 
 ## 13.3 招牌实现：分条刷屏
 
@@ -140,11 +140,11 @@ void I_FinishUpdate_e32(const byte *srcBuffer, const byte *palette,
 **它解决了什么**：内存放不下 150 KB 的整屏 RGB565。于是——
 
 1. 引擎只渲染 **240×160 的 8bpp 调色板索引**（38 KB，而不是 150 KB）；
-2. 用一条 **7.5 KB 的静态行缓冲**做"索引 → RGB565 转换 + 纵向 2× 拉伸"；
+2. 用一条 **7.5 KB 的静态行缓冲**做“索引 → RGB565 转换 + 纵向 2× 拉伸”；
 3. 每次只推 8 行游戏画面（16 物理行），分 10 次推完；
 4. 每 4 帧 `vTaskDelay(1)`，防看门狗。
 
-**这是第 11 章"纪律 1 + 纪律 3"的完整演示。**
+**这是第 11 章“纪律 1 + 纪律 3”的完整演示。**
 
 ## 13.4 另一个巧思：--wrap 重定向 clock()
 
@@ -167,7 +167,7 @@ target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=clock")
 ```
 
 **`--wrap=symbol` 会让所有对 `symbol` 的引用重定向到 `__wrap_symbol`。**
-当你移植一个"假设有标准 libc"的 C 库到嵌入式平台时，这招能救你的命。
+当你移植一个“假设有标准 libc”的 C 库到嵌入式平台时，这招能救你的命。
 
 ## 13.5 它踩过的坑（docs/issues.md 原文）
 
@@ -229,10 +229,10 @@ idf.py -p COM4 monitor
 - 分条刷屏 = 静态行缓冲 + 分次推送，是无 PSRAM 下的标准答案；
 - `--wrap=clock` 是移植第三方 C 库的利器；
 - 它**禁用了音频**，说明内存有多紧；
-- 想"看懂一个完整项目"就从这里开始。
+- 想“看懂一个完整项目”就从这里开始。
 
 > **延伸阅读 · 官方经验条目**：
 > [设备端对弈 AI 的墙钟预算](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/on-device-game-ai-wall-clock-budget.zh_CN.md)
-> ——棋类玩法在这块板上的节点数上限（约每秒 1.5 万）、时间预算式迭代加深，以及如何用"失误率"表达难度；
+> ——棋类玩法在这块板上的节点数上限（约每秒 1.5 万）、时间预算式迭代加深，以及如何用“失误率”表达难度；
 > [游戏 Demo 到真机验收 SOP](https://github.com/FoloToy/ai-passport/blob/main/docs/development/engineering/game-demo-to-device-acceptance.zh_CN.md)
-> ——"可移植 C → H5/Wasm 评审 → 同种子回放比对 → 真机"的完整链路，见第 5.11 节
+> ——“可移植 C → H5/Wasm 评审 → 同种子回放比对 → 真机”的完整链路，见第 5.11 节

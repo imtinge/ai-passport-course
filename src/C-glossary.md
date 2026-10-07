@@ -1,6 +1,6 @@
 # C. 术语表
 
-给"会 C 但没做过嵌入式"的人准备的一份对照表。
+给“会 C 但没做过嵌入式”的人准备的一份对照表。
 按你在书里**大概什么时候会撞见**排序，不必一次读完。
 
 ## 平台与框架
@@ -22,11 +22,11 @@
 | --- | --- |
 | **PSRAM** | 外接伪静态 RAM。**本设备没有**，这是全书最重要的约束 |
 | **内部 RAM / SRAM** | 芯片自带约 400 KB；可用堆约 230 KB，最大连续块 < 8 KB |
-| **largest free block** | 最大连续空闲块——**比"总空闲"更重要**，DMA 和大缓冲只看它 |
+| **largest free block** | 最大连续空闲块——**比“总空闲”更重要**，DMA 和大缓冲只看它 |
 | **rodata** | 只读数据段；`const` 数组留在 Flash，**不占 RAM**（第 11 章纪律 6） |
 | **Flash** | 断电不丢的存储器，本设备 8 MB；放固件与 `const` 数据 |
 | **NVS** | Non-Volatile Storage，Flash 上的键值数据库（设置、计数），键名 ≤15 字符 |
-| **分区表** | Flash 的"房型图"：bootloader / nvs / phy / app 各在哪、多大 |
+| **分区表** | Flash 的“房型图”：bootloader / nvs / phy / app 各在哪、多大 |
 | **factory 分区** | 默认应用所在分区（偏移 `0x10000`），官方默认约 7.9 MB |
 | **bootloader** | 上电先跑、负责引导 app 的二级程序（`0x0`） |
 | **full.bin** | bootloader + 分区表 + app 的合并镜像，`0x0` 整片烧 |
@@ -64,7 +64,7 @@
 | **控件 / widget** | LVGL 的 UI 元素（label、image、obj…） |
 | **bpp** | bits per pixel，字形抗锯齿位数（1 最省 Flash，4 更平滑） |
 | **字库子集** | 只包含指定字符的字体文件，省 Flash（推荐方案） |
-| **码点 codepoint** | 字符的 Unicode 编号；缺字检查必须按码点，不能"看一眼" |
+| **码点 codepoint** | 字符的 Unicode 编号；缺字检查必须按码点，不能“看一眼” |
 | **fallback** | 字体回退链：主字体查不到的码点沿 `fallback` 指针继续查 |
 | **placeholder** | 缺字占位符（`CONFIG_LV_USE_FONT_PLACEHOLDER`），保留它让问题可见 |
 | **binfont** | LVGL 的二进制字体格式，可从内存 buffer 加载 |
@@ -77,7 +77,7 @@
 | **句柄 handle** | 对象引用（`TaskHandle_t`、`QueueHandle_t`…） |
 | **优先级** | 数字越大越优先。官方：LVGL=4、输入派发=5、慢活 worker=4 |
 | **队列 Queue** | 任务间传消息的缓冲通道（按键事件用它） |
-| **信号量 Semaphore** | 同步/互斥原语；本书最常用于"worker 已停止"的握手 |
+| **信号量 Semaphore** | 同步/互斥原语；本书最常用于“worker 已停止”的握手 |
 | **任务通知 Notify** | 轻量 32 位任务间消息，比队列省资源 |
 | **递归锁** | LVGL 的锁是递归的：同任务可重复加，跨任务互斥 |
 | **栈水位线** | 任务历史上剩余栈的最小值，用来定栈大小 |
@@ -99,20 +99,20 @@
 | **DHCP** | 路由器给设备分配 IP 的服务；`IP_EVENT_STA_GOT_IP` 就是它完成的标志 |
 | **2.4 GHz** | ESP32-C3 **只支持**这个频段；手机热点开 5 GHz 时设备搜不到（不是 bug） |
 | **TLS / HTTPS** | 加密传输层 / 其上的 HTTP；握手是内存峰值，且**依赖系统时间** |
-| **证书 / CA** | 证明"你连的服务器是真的"的凭据；可单证书嵌入或用证书包 |
+| **证书 / CA** | 证明“你连的服务器是真的”的凭据；可单证书嵌入或用证书包 |
 | **证书包 crt bundle** | 内置一批公共 CA，能访问多数公网 HTTPS，代价是 Flash/RAM |
 | **SNTP** | 网络授时；拿到 IP 之后才能用。**没校时先发 HTTPS 必然失败**（第 10c.2 节） |
 | **配网 provisioning** | 把 Wi-Fi 密码交给设备的过程（第 10b 章） |
-| **BLUFI** | 乐鑫的 BLE 配网协议；官方分支 `demo/blufi-provisioning`，配套小程序"蓝牙配网-FoloToy AI PASSPORT" |
+| **BLUFI** | 乐鑫的 BLE 配网协议；官方分支 `demo/blufi-provisioning`，配套小程序“蓝牙配网-FoloToy AI PASSPORT” |
 | **SoftAP 配网** | 设备开热点 → 手机浏览器填表单；最灵活也最吃内存 |
 | **captive portal** | 连上热点后自动弹配置页；靠通配 DNS + HTTP 重定向实现，兼容性要实测 |
 | **SmartConfig** | 手机把密码编进 UDP 广播、设备抓包解出；依赖第三方 App，新项目很少用 |
-| **PoP** | Proof of Possession，配网时证明"我有权限配这台设备"的口令（SECURITY_1） |
+| **PoP** | Proof of Possession，配网时证明“我有权限配这台设备”的口令（SECURITY_1） |
 | **content-length = -1** | 分块传输（chunked）：响应没有声明长度，必须边收边处理 |
 | **MQTT** | 轻量级发布/订阅消息协议；IDF 自带 `mqtt` 组件，适合长连接推送 |
 | **WebSocket** | 双向长连接；v5.5.3 基础组件里没有，需加 `espressif/esp_websocket_client` |
 | **keep-alive / 心跳** | 定期发包维持长连接，否则路由器会静默掉空闲连接 |
-| **OTA** | 见"内存与存储"；**默认分区表没有 OTA 槽**，要自己改 |
+| **OTA** | 见“内存与存储”；**默认分区表没有 OTA 槽**，要自己改 |
 
 ## 工程与验证
 

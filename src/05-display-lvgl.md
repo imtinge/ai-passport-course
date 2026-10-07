@@ -3,8 +3,8 @@
 > **可抄代码**：[D.2 屏幕/背光](D-module-cookbook.md#d2-屏幕与背光) · [D.3 页面骨架](D-module-cookbook.md#d3-lvgl-页面骨架五个钩子) · [D.4 中文](D-module-cookbook.md#d4-中文显示) · [D.5 图片](D-module-cookbook.md#d5-显示图片)。
 
 
-如果你没写过 GUI 程序，LVGL 会是你在这块板子上遇到的第一个"范式转换"。
-本章从"你会的 C"出发讲它，并且会一路讲到**怎么显示一张图片**
+如果你没写过 GUI 程序，LVGL 会是你在这块板子上遇到的第一个“范式转换”。
+本章从“你会的 C”出发讲它，并且会一路讲到**怎么显示一张图片**
 和**怎么让中文真正显示出来**——这两件事是新人的头两个坑。
 
 ## 5.1 先确认版本：LVGL 9.5
@@ -31,7 +31,7 @@
 > 而 `components/bsp/include/bsp_pins.h` 里的 `BSP_LCD_PCLK_HZ` 是 **80 MHz**，
 > 硬件开发指南（`AI_HARDWARE_DEVELOPMENT_GUIDE`）同页也写 **80 MHz**，mode 0。
 > 第三方实测贴跟着 README 抄成了 40 MHz。**信 `bsp_pins.h`：这块屏跑 80 MHz。**
-> 这类"摘要表没跟上源码"的事在本仓库不是孤例——凡是要用的数字，回到头文件确认一遍。
+> 这类“摘要表没跟上源码”的事在本仓库不是孤例——凡是要用的数字，回到头文件确认一遍。
 
 ## 5.2 三步点亮
 
@@ -47,12 +47,12 @@ bsp_display_backlight(100);           // 3. ★ 点亮背光
 第三步最容易被忘。官方 BSP 的背光默认 duty 是 0，
 **不点亮就是纯黑**——而且你会以为是自己画错了。
 
-> 源码注释（pax-zhang）："背光默认 duty=0。必须在建 UI 之前点亮，
-> 否则 shell 里排版卡住就会一直黑屏。"
+> 源码注释（pax-zhang）：“背光默认 duty=0。必须在建 UI 之前点亮，
+> 否则 shell 里排版卡住就会一直黑屏。”
 
 ## 5.3 一帧画面是怎么上屏的
 
-理解这条链路，能帮你判断"为什么我的动画卡"。
+理解这条链路，能帮你判断“为什么我的动画卡”。
 
 ```text
 你的代码：lv_label_set_text() / lv_obj_set_style_*()   ← 只是改对象状态、标脏
@@ -72,7 +72,7 @@ SPI2 DMA 事务队列（80 MHz，trans_queue_depth=10）→ ST7789P3
 **四个推论：**
 
 1. **改属性 ≠ 立刻刷屏。** LVGL 合并脏区域、最多每 20 ms 刷一次。
-   所以不要去调"强制同步刷新"接口，那只会打乱它的节奏。
+   所以不要去调“强制同步刷新”接口，那只会打乱它的节奏。
 2. **一屏分 8 个 40 行的块传输。** 缓冲只有 40 行，
    所以动画要尽量做**局部脏区**——全屏重绘会连续占满多个 20 ms 周期。
 3. **圆角不是面板特性。** BSP 在 `FLUSH_START` 事件里逐行遮罩
@@ -83,12 +83,12 @@ SPI2 DMA 事务队列（80 MHz，trans_queue_depth=10）→ ST7789P3
 
 > ⚠️ **官方指南在这里和源码对不上，以源码为准。**
 > `docs/hardware-design/AI_HARDWARE_DEVELOPMENT_GUIDE.zh_CN.md` 写的是
-> "240 × 20 像素的单 DMA 缓冲，RGB565 约 9.6 KB"，而当前
+> “240 × 20 像素的单 DMA 缓冲，RGB565 约 9.6 KB”，而当前
 > `components/bsp/src/bsp_display_lvgl.c` 是 `#define BSP_LVGL_DRAW_BUFFER_LINES 40`
 > （注释：40 行单缓冲约 19.2 KB）。
-> 原因是指南标注的"代码复核日期 2026-09-14"早于 `perf(display): improve LVGL
+> 原因是指南标注的“代码复核日期 2026-09-14”早于 `perf(display): improve LVGL
 > refresh throughput`（2026-09-20，把行数从 20 提到 40）。
-> **这是第 E.7 节"文档滞后"的又一个实例**——看到 9.6 KB 不用怀疑自己算错了。
+> **这是第 E.7 节“文档滞后”的又一个实例**——看到 9.6 KB 不用怀疑自己算错了。
 > 量化影响：一屏从 16 个块变成 8 个块，全屏重绘占满的 20 ms 周期数减半。
 
 ## 5.4 任务模型与锁（最容易出事的地方）
@@ -109,12 +109,12 @@ SPI2 DMA 事务队列（80 MHz，trans_queue_depth=10）→ ST7789P3
 优先级 4 / 栈 7168 / tick 5 ms 就是 esp_lvgl_port 2.9.0 的默认值，
 可以直接查 `managed_components/espressif__esp_lvgl_port/include/esp_lvgl_port.h`。
 
-> ⚠️ **但社区仓库的注释里会出现"LVGL（5）"**（PokeWalk 就写着
-> "优先级 4 —— 低于 LVGL（5）"）。那是它自己固件的配置。
+> ⚠️ **但社区仓库的注释里会出现“LVGL（5）”**（PokeWalk 就写着
+> “优先级 4 —— 低于 LVGL（5）”）。那是它自己固件的配置。
 > **思路照抄（慢活别抢 UI），数字别照抄，以你手上的源码为准。**
 >
 > 还有一点容易误读：官方**输入派发任务是 5，比 LVGL 高**
-> （`main/main.c:175`）。它能这么高是因为只做"收队列 → 加锁 → 转发 → 放锁"，
+> （`main/main.c:175`）。它能这么高是因为只做“收队列 → 加锁 → 转发 → 放锁”，
 > 持锁时间极短。**你的 worker 不要模仿这个数字**，照第 12.1 节的表配就好。
 
 ### 三条铁律
@@ -136,7 +136,7 @@ if (bsp_lvgl_lock(100)) {          // 超时（ms）返回 false 就放弃本次
 **铁律 2：`lv_timer` 的回调运行在 taskLVGL 内——不用加锁，但绝不能阻塞。**
 
 > 源码注释（官方 `demo_battery.c`）：
-> "lv_timer 跑在 LVGL 任务里,已持有锁,可直接操作对象。"
+> “lv_timer 跑在 LVGL 任务里,已持有锁,可直接操作对象。”
 
 回调里 `vTaskDelay`、等信号量、读写音频，**都会卡住整屏刷新**。
 基线电池页的 1 秒刷新就是标准示范：回调里只读 SOC 然后 `set_text`。
@@ -172,11 +172,11 @@ lv_obj_set_style_text_font(label, &my_font, LV_PART_MAIN | LV_STATE_DEFAULT);
 
 最后一个参数是 **part | state 的组合**。
 你常看到的 `0` 就是 `LV_PART_MAIN | LV_STATE_DEFAULT` 的简写，两者等价。
-传 `LV_STATE_PRESSED` 表示"按下时的样式"。
+传 `LV_STATE_PRESSED` 表示“按下时的样式”。
 
 **这引出一条重要的坑**：改主题字体/默认字体
 **不会**替换控件上已显式设置的字体——
-这是"我明明设了中文字体，标题还是方块"的常见原因。
+这是“我明明设了中文字体，标题还是方块”的常见原因。
 
 **常用 API**（仓库实际使用的拼写，可照抄）：
 
@@ -301,15 +301,15 @@ typedef struct {
 | 5 | BLE | ✅ | ✅ | NimBLE peripheral 广播 |
 | 6 | Low Power | ✅ | ✅ | 浅睡 / 深睡 |
 
-> 只有"需要慢服务"的页面才实现 `start/stop`——Display、Button、Battery 三个
+> 只有“需要慢服务”的页面才实现 `start/stop`——Display、Button、Battery 三个
 > 没有后台任务，所以结构体里那两个成员留空。
 > **这是判断你要不要写 `stop()` 的标准**：没有 worker 就不要画蛇添足。
 
 `OK 长按` 在 `main.c` 里被**全局拦截**为退出当前页
 （`navigation_input()` 把 `BSP_BTN_LONG + BSP_BTN_OK` 映射成 `DEMO_NAV_INPUT_OK_LONG`），
-所以你的页面**不需要自己处理"返回"**——但也不能指望吃掉长按。
+所以你的页面**不需要自己处理“返回”**——但也不能指望吃掉长按。
 
-### 七个 demo 各自的"该抄哪一段"
+### 七个 demo 各自的“该抄哪一段”
 
 这些页面不是示例玩具，是**官方给的可抄模板**。逐个说清楚该看什么
 （数值都从源码核过）：
@@ -324,7 +324,7 @@ typedef struct {
 | **BLE** | 广播名 `FoloPassport`，手机可扫 | NimBLE 需要自己的 host 任务；`nimble_port_init` → `sync_cb` → `ble_gap_adv_start` |
 | **Low Power** | `LIGHT SLEEP \| 2 SEC` / `DEEP SLEEP \| 5 SEC` | 深睡断电顺序；`RTC_DATA_ATTR` + 魔数 `0x464F4C4F` 区分冷启动与唤醒 |
 
-> 图片 + 中文 + 语音的"三件套"综合示例，见本书第 18 章「巴巴爸爸图鉴」——那是作者（你）
+> 图片 + 中文 + 语音的“三件套”综合示例，见本书第 18 章「巴巴爸爸图鉴」——那是作者（你）
 > 用 **Trae** 生成的实战项目（非官方，不在 `folotoy/ai-passport` 仓库），但代码仍是可抄范例。
 
 Audio 页那个模板值得单独记住，它是 6 个文件共用的骨架：
@@ -347,7 +347,7 @@ exit()    删 UI
 完整流程（转换脚本、EMBED_FILES、描述符、排错表）见 **第 20 章**。
 这里只留两个容易踩的点：
 
-**一、`lv_image_dsc_t` 的 `stride` 是"一行字节数"，不是宽度。**
+**一、`lv_image_dsc_t` 的 `stride` 是“一行字节数”，不是宽度。**
 
 ```c
 const lv_image_dsc_t my_img = {
@@ -406,8 +406,8 @@ lv_label_set_text(label, "你好世界");   // 编译通过，烧进去可能是
 由此得到关键认知：
 
 - **UTF-8 和中文字库是两回事**。`CONFIG_LV_TXT_ENC_UTF8` 只告诉 LVGL
-  "怎么把字节解析成码点"，**不会安装任何字形**。Montserrat 的 cmap 只覆盖拉丁字母，
-  汉字码点全部 miss——这就是"英文正常、中文空白/方框"的根因；
+  “怎么把字节解析成码点”，**不会安装任何字形**。Montserrat 的 cmap 只覆盖拉丁字母，
+  汉字码点全部 miss——这就是“英文正常、中文空白/方框”的根因；
 - 基线固件默认只启用 Montserrat 14/20，**没有中文字体**；
 - **一个字体只有一个字号**。要 16 px 和 20 px 中文，就得生成**两个**字体文件；
 - **不要关掉 `CONFIG_LV_USE_FONT_PLACEHOLDER`**：缺字时画个可见符号让问题暴露，
@@ -415,7 +415,7 @@ lv_label_set_text(label, "你好世界");   // 编译通过，烧进去可能是
 
 **怎么做**：从选字体、抽码点、`lv_font_conv` 生成、编进工程、
 绑定 fallback 到程序化验证缺字，完整手把手在 **第 19 章**。
-这章只负责让你知道"空白/方框"到底是哪一层的问题。
+这章只负责让你知道“空白/方框”到底是哪一层的问题。
 
 ## 5.9 240×320 到底能放多少东西
 
@@ -428,7 +428,7 @@ lv_label_set_text(label, "你好世界");   // 编译通过，烧进去可能是
 | 一行中文 | 12 px 字体约 18 个字 |
 | 导航深度 | 不超过 3 层 |
 
-记住：**240×320 不是"缩小版手机屏"，是"比智能手表大一点"**。
+记住：**240×320 不是“缩小版手机屏”，是“比智能手表大一点”**。
 把手机 App 界面搬上去一定失败。
 
 介绍文字太长时，用单行循环滚动：
@@ -475,7 +475,7 @@ static void sleep_now(void)
 
 ## 5.11 游戏与高帧率场景：官方验收 SOP
 
-做游戏类玩法（第 13/14 章）时，"在电脑上跑得动"和"在板上玩得舒服"是两件事。
+做游戏类玩法（第 13/14 章）时，“在电脑上跑得动”和“在板上玩得舒服”是两件事。
 官方为此专门写了一篇 SOP：
 [`docs/development/engineering/game-demo-to-device-acceptance.zh_CN.md`](https://github.com/FoloToy/ai-passport/blob/main/docs/development/engineering/game-demo-to-device-acceptance.zh_CN.md)。核心是这条链路：
 
@@ -499,7 +499,7 @@ ESP-IDF/LVGL、ADC 按键、电量、显示传输与任务所有权放在**设�
 | 3 | 集成进应用自己的 UI，跑仓库完整验证，记录提交号/固件哈希/素材哈希 | 能进预期起始画面，且能识别装的是哪一版 |
 | 4 | 真机重复同一张场景表，测量**设备独有事实** | 实体按键与完整流程通过，真机测量达标 |
 
-第 4 步的"设备独有事实"是这份 SOP 最有价值的部分——**网页性能计数器、串口截图和
+第 4 步的“设备独有事实”是这份 SOP 最有价值的部分——**网页性能计数器、串口截图和
 C 自动化测试都不能证明实体屏幕的流畅度或长时间游玩的内存安全性**。要实测的是：
 
 - 提交帧率，以及可获得时的屏幕完成帧节奏；
@@ -530,7 +530,7 @@ C 自动化测试都不能证明实体屏幕的流畅度或长时间游玩的内
 
 下一章讲按键——三个键怎么撑起一整套交互。
 
-> 官方把"屏幕 + 背光"做成最小可跑示例的逐行源码，见第 25 章（Display 示例）。
+> 官方把“屏幕 + 背光”做成最小可跑示例的逐行源码，见第 25 章（Display 示例）。
 
 > **延伸阅读 · 官方经验条目**（`docs/reference/`，非强制但带实测数字）：
 > [显示刷新与深睡](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/display-refresh-and-deep-sleep.zh_CN.md) ·

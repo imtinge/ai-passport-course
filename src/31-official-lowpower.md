@@ -10,7 +10,7 @@
 
 | 操作 | 行为 |
 | --- | --- |
-| 打开页面 | 两张模式卡：`LIGHT SLEEP 2 SEC` / `DEEP SLEEP 5 SEC`；显示"RTC 定时器唤醒"提示 |
+| 打开页面 | 两张模式卡：`LIGHT SLEEP 2 SEC` / `DEEP SLEEP 5 SEC`；显示“RTC 定时器唤醒”提示 |
 | UP / DOWN（短按） | 选模式 |
 | OK（短按） | 跑选中的睡眠（醒来后由 RTC 定时器唤醒） |
 | OK（长按） | 返回菜单（框架拦截） |
@@ -33,8 +33,8 @@ static RTC_DATA_ATTR uint32_t s_deep_sleep_count;
 ```
 
 `RTC_DATA_ATTR` 把变量放进 **RTC 慢速内存**——deep sleep 时这部分不掉电，普通 RAM 会清空。
-所以用 `s_deep_sleep_magic`（魔数 `0x464F4C4F`）区分"冷启动"和"从 deep sleep 唤醒"，
-用 `s_deep_sleep_count` 累计唤醒次数。`enter` 据此显示"DEEP TIMER WAKE #N"：
+所以用 `s_deep_sleep_magic`（魔数 `0x464F4C4F`）区分“冷启动”和“从 deep sleep 唤醒”，
+用 `s_deep_sleep_count` 累计唤醒次数。`enter` 据此显示“DEEP TIMER WAKE #N”：
 
 ```c
 // main/demo_low_power.c:184-191（节选 enter）
@@ -49,9 +49,9 @@ if (s_deep_sleep_magic == DEEP_SLEEP_MAGIC &&
 
 ## 31.3 菜单：两张模式卡 + 选中态
 
-和 Display 页一样用查找表 + 环形下标表达"当前选哪一项"（`:193-207`）。`menu_refresh()` 调
+和 Display 页一样用查找表 + 环形下标表达“当前选哪一项”（`:193-207`）。`menu_refresh()` 调
 `ui_pixel_set_selected` 给选中卡上黄底。`key` 里 UP/DOWN 切 `s_selected`、`OK` 下发睡眠命令
-（`:277-290`）。这页的 `key` 和 Display 一样是"加锁改状态"的轻量写法。
+（`:277-290`）。这页的 `key` 和 Display 一样是“加锁改状态”的轻量写法。
 
 ## 31.4 `sleep_task`：命令循环 + 停止握手
 
@@ -80,8 +80,8 @@ static void sleep_task(void *arg) {
 
 ## 31.5 DEEP SLEEP：严格的外设停序
 
-深睡前要按"电量计 → 音频 → I2S → 共享 I2C → LCD"顺序 suspend，且**任何一步失败也继续往下停**
-（用 `log_deep_sleep_warning` 只记日志不中断），最后锁 LVGL 防关屏后刷屏，再进深睡：
+深睡前要按“电量计 → 音频 → I2S → 共享 I2C → LCD”顺序 suspend，且**任何一步失败也继续往下停**
+（用 `log_deep_sleep_warning` 只记日志不中断），最后锁 LVGL 防熄屏后刷屏，再进深睡：
 
 ```c
 // main/demo_low_power.c:88-111（节选）
@@ -114,13 +114,13 @@ if (err == ESP_OK) {
 
 1. **停外设顺序固定**：CW2017 和 ES8311 共用 I2C，必须先把电量计写完再动 codec；否则 I2C 总线冲突。
    这条顺序官方注释写明来自硬件设计，本书前言勘误 #6 也确认它就在官方 `demo_low_power.c` 里。
-2. **失败也继续停**：`log_deep_sleep_warning` 只记日志不 return，因为"即使某步寄存器操作失败，
-   也宁可继续释放引脚进深睡"，比卡在半状态强。
+2. **失败也继续停**：`log_deep_sleep_warning` 只记日志不 return，因为“即使某步寄存器操作失败，
+   也宁可继续释放引脚进深睡”，比卡在半状态强。
 3. **深睡前锁 LVGL**：`bsp_lvgl_lock(1000)` 等当前 flush 完成，再 `bsp_display_prepare_deep_sleep()`
-   关屏——**防止 LCD 关了之后 LVGL 任务还在刷屏**（那会访问已断电的硬件）。`esp_deep_sleep_start()`
+   熄屏——**防止 LCD 关了之后 LVGL 任务还在刷屏**（那会访问已断电的硬件）。`esp_deep_sleep_start()`
    不返回；若返回说明失败，直接 `esp_restart()` 恢复外设。
 
-> 深睡唤醒是**冷重启**：代码从 `app_main` 重新跑，`enter` 靠 `RTC_DATA_ATTR` 的魔数认出"我是被定时器唤醒的"。
+> 深睡唤醒是**冷重启**：代码从 `app_main` 重新跑，`enter` 靠 `RTC_DATA_ATTR` 的魔数认出“我是被定时器唤醒的”。
 
 **这五步每一步内部的校验契约**（寄存器回读重试、引脚终端状态、`esp_codec_dev_close()` 为什么不够、
 light sleep 为什么**不能**调这些接口、哪些电流软件修不掉）见 **第 8.4 节**——那里按官方
@@ -157,23 +157,23 @@ bsp_display_backlight(100);                           // ④ 恢复背光
 
 **`audio_suspend_attempted` 这个标志是点睛之笔**：浅睡可能因故没真正进入（比如 `esp_light_sleep_start`
 返回错误），但只要**尝试过** suspend，醒来就必须 `bsp_audio_wake()` 恢复，否则音频芯片停在挂起态。
-官方注释明确写："即使未进入 light sleep 也必须恢复"。`slept_ms` 还能算出实际睡了多久，上屏反馈。
+官方注释明确写：“即使未进入 light sleep 也必须恢复”。`slept_ms` 还能算出实际睡了多久，上屏反馈。
 
 ## 31.7 `enter` / `start` / `stop` / `exit`
 
 `start`（`:213-234`）建 `sleep_task`（栈 3072）+ 二值信号量；`stop`（`:236-261`）和 Audio/BLE 同款的
-"cancel → notify STOP → 等 `s_stopped` → `vTaskDelete`"，并额外恢复背光 100% + 关唤醒源；
+“cancel → notify STOP → 等 `s_stopped` → `vTaskDelete`”，并额外恢复背光 100% + 关唤醒源；
 `exit`（`:263-275`）恢复背光、关唤醒源、删屏；`enter` 显示唤醒计数（见 31.2）。
 
 ## 31.8 这个 demo 能抄什么
 
 - **`RTC_DATA_ATTR` 跨 deep sleep 保留状态**（魔数区分冷启动/唤醒）；
 - **深睡前固定外设停序**（电量计→codec→I2S→I2C→LCD）+ 失败也继续；
-- **深睡前锁 LVGL 防关屏后刷屏**；
-- **浅睡"试过 suspend 就必须 wake"的对称恢复**；
+- **深睡前锁 LVGL 防熄屏后刷屏**；
+- **浅睡“试过 suspend 就必须 wake”的对称恢复**；
 - **worker-stop 模板**（和 Audio/BLE 同一套）；
-- **不用按键唤醒**：官方注释说"仓库尚无板级唤醒电路证据"——这是诚实的工程边界，别照抄"按某键唤醒"的旧教程。
+- **不用按键唤醒**：官方注释说“仓库尚无板级唤醒电路证据”——这是诚实的工程边界，别照抄“按某键唤醒”的旧教程。
 
-和第 8 章的关系：第 8 章讲电量、熄屏、深睡的原理与 wakeup 源，本章是官方把"安全地睡、安全地醒"
-做成最小可跑实例。想看"运行时怎么省电不睡死"，第 8 章有 BLE/Wi-Fi 的 modem-sleep 思路，但本 demo
+和第 8 章的关系：第 8 章讲电量、熄屏、深睡的原理与 wakeup 源，本章是官方把“安全地睡、安全地醒”
+做成最小可跑实例。想看“运行时怎么省电不睡死”，第 8 章有 BLE/Wi-Fi 的 modem-sleep 思路，但本 demo
 聚焦最彻底的 light/deep sleep 验证。

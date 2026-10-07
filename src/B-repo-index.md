@@ -25,7 +25,7 @@
 ### 官方收录的应用档案（找灵感的第一站）
 
 官方 `docs/reference/<用户名>/<应用名>/` 下还归档了 **10 个成品应用**。
-它们和 B.1 的定位不同：不是"能 clone 的仓库"，而是**带设计说明的成品档案**
+它们和 B.1 的定位不同：不是“能 clone 的仓库”，而是**带设计说明的成品档案**
 （纯文本，不存固件 `.bin`）。**找灵感、看别人怎么拆解需求时先看这里。**
 
 | 应用 | 形态 / 规模 | 值得看的点 |
@@ -41,7 +41,7 @@
 | [魔女的夜宴](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/sanoba-witch/README.zh_CN.md) | 竖屏，101 章、五线五结局全装进 Flash | **极限容量**：全部素材塞进分区 |
 | [离线宝可梦图鉴](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/sunny0826/offline-pokedex/README.zh_CN.md) | 1025 只 + 精灵 + 叫声内嵌，全离线 | 大规模只读素材的索引与检索 |
 
-> 视觉小说这一族反复出现的工程主题是"**剧本包预算**"——
+> 视觉小说这一族反复出现的工程主题是“**剧本包预算**”——
 > 5.06 MB 压到 1.45 MB，块大小由**最大连续块 7.7 KB** 而非空闲堆决定。
 > 详见第 9 章与第 11 章，官方条目在
 > [`vn-script-pack-budget-and-failure-modes`](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/vn-script-pack-budget-and-failure-modes.zh_CN.md)。
@@ -63,7 +63,7 @@
 | 构建 | `idf.py build` | `idf.py build` | `validate.sh` | `fw.sh build` | `scripts/build.py` |
 | 本书章节 | 13 | 14 | 15 | 16 | 17 |
 
-## B.3 按"我想学什么"找仓库
+## B.3 按“我想学什么”找仓库
 
 | 你想做 | 去看 |
 | --- | --- |
@@ -163,7 +163,7 @@ git clone --recursive https://github.com/FoloToy/ai-passport-micropython
 
 > **USB 不是 U 盘。** ESP32-C3 提供的是 USB Serial/JTAG（GPIO18/19），
 > 不是 USB OTG 大容量存储——**不能拖拽拷贝**，一切上传走 `mpremote`。
-> 这一点官方在 `AGENTS.md` 里专门写了"不要承诺拖拽 U 盘模式"。
+> 这一点官方在 `AGENTS.md` 里专门写了“不要承诺拖拽 U 盘模式”。
 
 ### B.7.2 引脚事实通用：本书的数字照抄
 
@@ -176,7 +176,7 @@ git clone --recursive https://github.com/FoloToy/ai-passport-micropython
 | LCD | SPI2，SCLK 8 / MOSI 9 / CS 1 / DC 20 / BL 21，240×320 RGB565 | 同（MicroPython `SPI(1)` 即 ESP-IDF SPI2） |
 | I²C | SCL 7 / SDA 10；ES8311 `0x18`、CW2017 `0x63` | 同 |
 | I²S | MCLK 6 / BCLK 5 / WS 3 / DOUT 2 / DIN 4 | 同 |
-| 按键 | GPIO0 电阻阶梯 ADC | 同，**连判定窗口都注明"与 `BSP_BTN_MV_TABLE` 保持一致"** |
+| 按键 | GPIO0 电阻阶梯 ADC | 同，**连判定窗口都注明“与 `BSP_BTN_MV_TABLE` 保持一致”** |
 | 音频默认 | 16 kHz / 16 bit / 单声道 | `codec.configure_slave(16000, 16)` + `I2S.MONO` |
 | 电量算法 | SOC 取 `0x04` 高字节；VCELL `0x02` & `0x3FFF`，`×312.5 µV` | **完全一致**，见下方代码 |
 
@@ -186,7 +186,7 @@ MicroPython 版的单一事实源是
 
 内置冻结示例还是**同样的 7 页**——Display / Button / Audio / Battery /
 Wi-Fi / BLE / Low Power，正是本书第 24–31 章逐个拆解的那 7 个硬件测试 demo。
-所以你可以把它当成"同一套硬件事实的 Python 版注解"来读。
+所以你可以把它当成“同一套硬件事实的 Python 版注解”来读。
 
 ### B.7.3 模块地图与最小骨架
 
@@ -230,7 +230,7 @@ wlan.config(reconnects=3)           # ★ 默认是"永远重试"，见下
 > **★ `wlan.config(reconnects=n)` 这条要特别记**：MicroPython 的 WLAN
 > **默认会无限重连**，即使密码错误或 AP 不在范围内也一直试，
 > 期间 `wlan.status()` 一直是 `STAT_CONNECTING`。
-> 这正是本书第 10 章"密码错这类确定性失败不该狂连"要治的病——
+> 这正是本书第 10 章“密码错这类确定性失败不该狂连”要治的病——
 > 在 Python 侧，`reconnects=0` 就是不重试，`-1` 恢复默认。
 
 ### B.7.4 更紧的地方：内存、深睡、按键、中文
@@ -265,7 +265,7 @@ sample = bytearray(1024)
 
 - CW2017 睡眠写入 + 5 ms 回读重试；
 - ES8311 六个寄存器回读校验；
-- I2S / I²C 引脚释放为"关闭上下拉的输入"；
+- I2S / I²C 引脚释放为“关闭上下拉的输入”；
 - LCD 的 deep-sleep hold 与安全电平。
 
 所以**待机电流会明显高于 C 版**。真要做低功耗产品，这几步得自己补。
@@ -291,13 +291,13 @@ deepsleep(10000)
 Python 处理踢出中断上下文，注释解释了原因：
 **用 LVGL timer 会让输入依赖 LVGL 回调桥，在某些构建上会静默丢按键。**
 
-这就是本书 6.4 节"回调只入队"的 Python 版对应物——
+这就是本书 6.4 节“回调只入队”的 Python 版对应物——
 慢活（录音、播放、扫描、网络请求）一律开 `_thread` 工作线程，
 再用 `micropython.schedule()` 回到主线程更新 UI。
 
 **④ 中文仍是字体任务**
 
-默认 ASCII 字体**不能**显示中文，官方明确要求"确认所选字体包含每一个字形"。
+默认 ASCII 字体**不能**显示中文，官方明确要求“确认所选字体包含每一个字形”。
 而且 LVGL 绑定的默认字体是**配置相关**的，内置示例显式固定字号避免行高乱跳：
 
 ```python
@@ -308,7 +308,7 @@ obj.set_style_text_font(font, 0)
 本书第 19 章的缺字检查（`lv_font_get_glyph_dsc()` + `is_placeholder`）
 在这里**一样要做**，只是换成 Python 侧调用。
 
-**⑤ 电量是"自己读寄存器"，而且比 C 版简单**
+**⑤ 电量是“自己读寄存器”，而且比 C 版简单**
 
 ```python
 soc_raw   = int.from_bytes(i2c.readfrom_mem(0x63, 0x04, 2), "big")
@@ -318,9 +318,9 @@ soc = max(0, min(100, soc_raw // 256))   # 取高字节
 ```
 
 算法**和本书 8.1 节讲的完全一致**；差别是它没有 C 版那套
-80 字节 profile 加载与"SOC > 100 返回 -1"的校验，只是简单地 clamp 到 0–100。
+80 字节 profile 加载与“SOC > 100 返回 -1”的校验，只是简单地 clamp 到 0–100。
 异常时返回 `(None, None)`，界面显示 `--%`——
-**这正好是本书 8.1 节说的"优雅降级"和"首帧不要虚构百分比"**。
+**这正好是本书 8.1 节说的“优雅降级”和“首帧不要虚构百分比”**。
 
 ### B.7.5 工作流：一句话 → main.py → 真机
 
@@ -349,7 +349,7 @@ Windows 找不到 `python` 时用 `py -m`；端口也可以用环境变量固定
 **两条和 C 版完全一样的铁律**：
 
 1. **不许照抄硬件测试菜单当产品 UI**——内置 7 页只是学习参考，
-   "改名换色"不算完成（本书 4.9 节第 5 条、E.4 节）；
+   “改名换色”不算完成（本书 4.9 节第 5 条、E.4 节）；
 2. **交付四段分开写**：`Build / Host tests / Device tests / Unverified`，
    **编译通过 ≠ 硬件验证通过**（本书 4.9 节配套约定）。
 
@@ -383,5 +383,5 @@ Windows 找不到 `python` 时用 `py -m`；端口也可以用环境变量固定
 
 > 一句话选型：**想快速做出能玩的东西 → MicroPython；
 > 想把它做成省电、可控、能长期维护的产品 → C。**
-> 两者的板级事实是同一套，所以你在本书学到的"为什么"，
+> 两者的板级事实是同一套，所以你在本书学到的“为什么”，
 > 在 Python 侧一个字都不用改。

@@ -1,7 +1,7 @@
 # 30. 官方 BLE 示例：NimBLE 广播
 
 源码：`main/demo_ble.c`（279 行）+ 辅助 `main/demo_radio.c/.h`。它演示**用 NimBLE 起一个非连接广播**，
-手机蓝牙扫描能搜到 `FoloPassport`。BLE 比 Wi-Fi 多一层"host 任务"的所有权管理，是官方里
+手机蓝牙扫描能搜到 `FoloPassport`。BLE 比 Wi-Fi 多一层“host 任务”的所有权管理，是官方里
 **停止握手最复杂**的一个 demo。
 
 > 行号来自官方基线 `main/demo_ble.c`。
@@ -46,7 +46,7 @@ CONFIG_BT_NIMBLE_ENABLED=y
 > **别把 `NIMBLE_ROLE_CENTRAL` 之类开起来。** 官方只开了
 > `..._ROLE_PERIPHERAL=y`（从机，广播）和 `..._ROLE_BROADCASTER=y`（广播者），
 > `MAX_CONNECTIONS=1`，`CENTRAL` 和 `OBSERVER` 明确是 `n`。
-> 你只需要"能被手机扫到"，做 central（去连别人）纯属浪费 Flash。
+> 你只需要“能被手机扫到”，做 central（去连别人）纯属浪费 Flash。
 
 ## 30.2 NimBLE 需要自己的 host 任务
 
@@ -101,7 +101,7 @@ static int gap_event(struct ble_gap_event *event, void *arg) {
 }
 ```
 
-`conn_mode = BLE_GAP_CONN_MODE_NON` 表示**只广播、不可连接**——这正是"让手机能发现设备"的最小集，
+`conn_mode = BLE_GAP_CONN_MODE_NON` 表示**只广播、不可连接**——这正是“让手机能发现设备”的最小集，
 不牵扯 GATT 连接管理。广播若自然结束（`ADV_COMPLETE`），回调里重新 `advertise()`，保持持续可见。
 
 ## 30.4 `on_reset` / `on_sync`：host 同步后才广播
@@ -195,7 +195,7 @@ esp_err_t demo_ble_stop(void) {
 比 Audio 页更复杂的点：**`s_stop_in_progress` / `s_host_done` 两个标志防止重复进入停止流程**。
 因为 `demo_ble_stop()` 在 `start` 的 `failed_start` 里也会被调用（半初始化状态），必须保证多次调用安全。
 ① 停广播 → ② `nimble_port_stop` 让 `host_task` 跑完并 `give(s_host_stopped)` → ③ 等信号量确认
-→ ④ `vTaskDelete` → ⑤ `nimble_port_deinit`。**这套"停协议栈 + 等任务确认 + 删任务 + 反初始化"的顺序不能乱。**
+→ ④ `vTaskDelete` → ⑤ `nimble_port_deinit`。**这套“停协议栈 + 等任务确认 + 删任务 + 反初始化”的顺序不能乱。**
 
 ## 30.7 `tick` / `enter` / `exit` / `key`
 
@@ -225,8 +225,8 @@ static void tick(lv_timer_t *timer) {
 - **防重入的 `s_stop_in_progress` / `s_host_done`**：`stop` 可能被失败清理路径重复调用；
 - **失败也走 `stop` 逆序清理**（和 Wi-Fi 同纪律）。
 
-和第 10 章、第 29 章的关系：第 10 章讲 BLE 原理；第 29 章是同样的"进页面起栈、出页面逆序回滚"思路，
-只是 BLE 多了一层 host 任务所有权。把这两章对照读，你就掌握了"官方怎么安全地开关一个协议栈"。
+和第 10 章、第 29 章的关系：第 10 章讲 BLE 原理；第 29 章是同样的“进页面起栈、出页面逆序回滚”思路，
+只是 BLE 多了一层 host 任务所有权。把这两章对照读，你就掌握了“官方怎么安全地开关一个协议栈”。
 
 > **延伸阅读 · 官方经验条目**：
 > [无 PSRAM 的双机 BLE 联机](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/two-device-ble-link.zh_CN.md)

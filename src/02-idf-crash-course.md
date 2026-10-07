@@ -18,7 +18,7 @@
 | --- | --- |
 | CMake 构建（`idf.py build`） | 相当于有人帮你写好了 Makefile，你只列源文件 |
 | FreeRTOS 任务 | 相当于线程（`pthread`），但栈大小要你手动指定 |
-| `esp_xxx()` / `driver/gpio.h` 等 | 相当于 libc 之外的"系统库"，用来操作硬件 |
+| `esp_xxx()` / `driver/gpio.h` 等 | 相当于 libc 之外的“系统库”，用来操作硬件 |
 
 ## 2.2 一个工程长什么样
 
@@ -139,11 +139,11 @@ idf_component_register(
 注意最后两行——**不是所有东西都搬走了**。
 `driver/` 目录在 5.5.3 里仍然存在，但只剩下 `deprecated/`、`i2c`（兼容层）、
 `touch_sensor`、`twai` 这些残留；`components/driver/sdkconfig.rename` 就是迁移标记。
-所以"老教程写 `driver`"在个别外设上还能过，在 I2C/I2S/SPI/ADC 上就断了。
+所以“老教程写 `driver`”在个别外设上还能过，在 I2C/I2S/SPI/ADC 上就断了。
 
 > **为什么官方要拆？** 以前你为了用 I2C，得把整个 `driver` 拖进来，
 > 于是 GPIO、TWAI、触摸全都跟着编译进固件。拆分后按需声明，
-> 既能少编译无关代码，也让"这个组件到底依赖什么"变得可查。
+> 既能少编译无关代码，也让“这个组件到底依赖什么”变得可查。
 > 迁移背景见官方 [5.2→5.3 迁移指南](https://docs.espressif.com/projects/esp-idf/zh_CN/v5.3.2/esp32/migration-guides/release-5.x/5.2-to-5.3.html)。
 
 **你什么时候需要关心这段？** 只有当你要**自己写组件**（而不是直接用现成的 `bsp`）时。
@@ -168,13 +168,13 @@ idf.py fullclean
 
 为什么这么强调？因为 CMake 的配置结果有缓存。
 **旧构建目录里没有新组件的头文件路径**，于是你会看到一个
-"我明明写对名字了却说找不到"的错，这类错最消耗时间：
+“我明明写对名字了却说找不到”的错，这类错最消耗时间：
 
 | 现象 | 真实原因 |
 | --- | --- |
 | `fatal error: button.h: No such file or directory` | 依赖加了，但没 fullclean，CMake 不知道 |
 | 头文件找到了，链接时报 undefined symbol | CMakeLists 改了但没重新配置 |
-| 改动"没生效"、跑的还是旧程序 | 同上，缓存 |
+| 改动“没生效”、跑的还是旧程序 | 同上，缓存 |
 
 在 VS Code 里等价操作是 `ESP-IDF: Full Clean Project`。
 官方文档特别提醒：**在已有工程上改依赖时这一步尤其重要**——
@@ -248,7 +248,7 @@ if (err != ESP_OK) {
 
 | 宏/函数 | 作用 | 什么时候用 |
 | --- | --- | --- |
-| `ESP_ERROR_CHECK(x)` | 出错就打印 + `abort()` | 只在"这个失败就没必要活下去"时用 |
+| `ESP_ERROR_CHECK(x)` | 出错就打印 + `abort()` | 只在“这个失败就没必要活下去”时用 |
 | `esp_err_to_name(e)` | 错误码 → 可读字符串 | 打日志时 |
 | `esp_err_to_name` vs `esp_err_to_name` | — | — |
 
@@ -256,8 +256,8 @@ if (err != ESP_OK) {
 运行阶段手动判断并降级（比如电量读不出来就显示 `-- %` 而不是重启）。
 
 > 一个真实的分寸感：官方 demo 的判断是
-> "屏幕失败就直接 return，不做降级"——因为屏幕是 UI 的唯一载体，
-> 而"电量计失败"只是让电量显示变成 `--`，其他功能照常。
+> “屏幕失败就直接 return，不做降级”——因为屏幕是 UI 的唯一载体，
+> 而“电量计失败”只是让电量显示变成 `--`，其他功能照常。
 > **不同的失败，代价不同。**
 
 ## 2.7 日志：printf 的替代品
@@ -312,7 +312,7 @@ xTaskCreate(my_task,      // 函数
 和 `pthread_create` 的三个关键差别：
 
 1. **栈大小必须你指定，单位是字节。** 4096 字节 = 4 KB。
-   这不是虚拟内存，是实打实从堆里挖走的。栈溢出不会报"段错误"，
+   这不是虚拟内存，是实打实从堆里挖走的。栈溢出不会报“段错误”，
    而是触发栈保护直接重启。
 2. **优先级数字越大越优先。** 官方基线里 LVGL 任务是 **4**
    （esp_lvgl_port 2.9.0 的默认值），音频这类慢活也是 **4**，
@@ -329,7 +329,7 @@ xTaskCreate(my_task,      // 函数
 > xTaskCreate(world_task, "world", 4096, NULL, 4, NULL);
 > ```
 >
-> 注：这句注释里的"LVGL（5）"是 **PokeWalk 自己固件**的配置；
+> 注：这句注释里的“LVGL（5）”是 **PokeWalk 自己固件**的配置；
 > 官方基线的 LVGL 任务是 **4**（源码可查，见第 12.1 节）。
 > 思路照抄（慢活别抢 UI），数字别照抄。
 
@@ -388,7 +388,7 @@ size_t len = _binary_gen1_bin_end - _binary_gen1_bin_start;
 
 ## 2.11 标准 C 在这里的几点不同
 
-这些是"会 C"的人最容易踩的：
+这些是“会 C”的人最容易踩的：
 
 | 你以为 | 实际上 |
 | --- | --- |
@@ -397,7 +397,7 @@ size_t len = _binary_gen1_bin_end - _binary_gen1_bin_start;
 | `float`/`double` 随便用 | ESP32-C3 无硬件浮点单元，软件模拟很慢，能免则免 |
 | `printf("%f")` 能打印 | 默认 **newlib 的 `%f` 被裁掉了**，打不出来 |
 | `clock()` 能用 | **恒返回 0**（有项目被这个坑到，见第 13 章） |
-| `malloc/free` 反复用没事 | 会碎片化，社区里因此出现过"只停不播"的 bug |
+| `malloc/free` 反复用没事 | 会碎片化，社区里因此出现过“只停不播”的 bug |
 | 未对齐访问只是慢 | 在 RISC-V 上是**异常**，不是慢速 |
 
 ## 2.12 小结：你只需要记住的新东西

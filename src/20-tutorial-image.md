@@ -2,7 +2,7 @@
 
 上一章解决了文字，这一章解决图片。
 
-先说结论：**在这块板子上，图片不是"解码"出来的，是"搬"上去的。**
+先说结论：**在这块板子上，图片不是“解码”出来的，是“搬”上去的。**
 你在 PC 上把图片转成屏幕原生格式，烧进 Flash，运行时 LVGL 拿一个指针直接读。
 没有 PNG 解码、没有 JPEG 解码、没有文件系统。
 
@@ -19,7 +19,7 @@
 |---|---|---|
 | RAM | 约 400 KB，可用堆约 230 KB | 解码一张 240×320 的图要一整帧 RGB565 = 150 KB，直接吃掉大半 |
 | 最大连续空闲块 | **< 8 KB** | 即使总量够，也未必能 `malloc` 出一大块 |
-| PSRAM | **没有** | 没有"外挂内存"这条路 |
+| PSRAM | **没有** | 没有“外挂内存”这条路 |
 | Flash | 8 MB | 空间充裕，而且**可以直接内存映射读** |
 
 所以社区的标准做法是：**把解码这件事挪到 PC 上，只做一次**。
@@ -33,7 +33,7 @@ PC（一次性）                     设备（每次运行）
 ```
 
 代价是图片尺寸和数量得在编译期定下来，不能运行时换。
-对徽章/挂件这类"图鉴、头像、图标"场景，这完全够用。
+对徽章/挂件这类“图鉴、头像、图标”场景，这完全够用。
 
 ---
 
@@ -67,7 +67,7 @@ struct.pack_into("<H", buf, i, rgb565)   # "<H" = 小端 uint16
 
 > ⚠ **不要手工做字节交换**
 >
-> 你可能会想"SPI 要 big-endian，那我存成大端吧"。**别**。
+> 你可能会想“SPI 要 big-endian，那我存成大端吧”。**别**。
 > BSP 在 LVGL port 配置里已经设了 `.swap_bytes = true`
 > （`components/bsp/src/bsp_display_lvgl.c:91`），port 会在送屏时统一交换。
 > 你要是提前换了一次，等于换了两次——**颜色全乱**。
@@ -138,7 +138,7 @@ python tools/img2rgb565.py gif/anim_02barbapapa.gif main/assets/barbapapa/bbp_im
 # anim_02barbapapa.gif: 400x400 -> 240x240  115200 B
 ```
 
-**一条硬规矩：转换脚本要打印"原始尺寸 → 输出尺寸 → 字节数"。**
+**一条硬规矩：转换脚本要打印“原始尺寸 → 输出尺寸 → 字节数”。**
 第 18 章的 `fetch_assets.py` 就是这么做的：
 
 ```text
@@ -182,15 +182,15 @@ idf_component_register(
 `_binary_<文件名（非字母数字替换为下划线）>_end`
 ```
 
-> ⚠ **符号只按"文件基名"生成，不含目录**
+> ⚠ **符号只按“文件基名”生成，不含目录**
 >
 > 第 18 章 `fetch_assets.py:178`（作者工作副本）的注释明确写了这一点：
-> *"ESP-IDF v5.5 的 EMBED_FILES 只按文件基名生成符号
-> （见 build/*.bin.S：`.global _binary_<basename>_start`），不含目录。"*
+> *“ESP-IDF v5.5 的 EMBED_FILES 只按文件基名生成符号
+> （见 build/*.bin.S：`.global _binary_<basename>_start`），不含目录。”*
 >
 > 所以 `assets/barbapapa/bbp_img_00.bin` 的符号是
 > `_binary_bbp_img_00_bin_start`，**不是** `_binary_assets_barbapapa_bbp_img_00_bin_start`。
-> 生成 C 文件时的符号拼接函数必须也只取基名，否则链接期报"未定义符号"。
+> 生成 C 文件时的符号拼接函数必须也只取基名，否则链接期报“未定义符号”。
 
 在 C 里声明（`main/assets/barbapapa/barbapapa_assets.c:4`）：
 
@@ -233,12 +233,12 @@ const lv_image_dsc_t bbp_imgs[10] = {
 > ⚠ **长度要写字面量，不要两个符号相减**
 >
 > 你可能想写 `.data_size = (uint32_t)(bbp_img_00_end - bbp_img_00)`。
-> **编不过**。两个 `extern` 符号相减不是"整型常量表达式"，
+> **编不过**。两个 `extern` 符号相减不是“整型常量表达式”，
 > 不能在文件作用域初始化结构体——GCC 14 / RISC-V 会直接报错。
 >
 > `barbapapa_assets.c` 的注释写得很清楚（第 18 章）：
-> *"长度写字面量：两个 extern 符号相减不是整型常量表达式，
-> 不能在文件作用域初始化结构体（GCC 14 / RISC-V 直接报错）。"*
+> *“长度写字面量：两个 extern 符号相减不是整型常量表达式，
+> 不能在文件作用域初始化结构体（GCC 14 / RISC-V 直接报错）。”*
 >
 > 所以让 PC 端脚本把长度算好写进 C 文件（就像 20.3 那样）。
 
@@ -324,7 +324,7 @@ void show_image(lv_obj_t *parent, uint8_t idx)
 
 **算一算再动手**：`宽 × 高 × 2` 就是字节数。
 一张全屏图 112 KB，10 张就 1 MB——加图之前先算，别等编译报
-"分区溢出"才回头。
+“分区溢出”才回头。
 
 ### 图太大怎么办：mmap
 
@@ -347,8 +347,8 @@ void show_image(lv_obj_t *parent, uint8_t idx)
 | **白色偏红** | 绿通道掩码写成 `0xE0` | 改成 `0xFC` |
 | 颜色整体错乱 | 手工做了字节交换 | 存小端，别手动 swap（BSP 的 `.swap_bytes` 已处理） |
 | 图片偏一边 | 没按实际宽度居中 | `(240 - header.w) / 2` |
-| 链接期"未定义符号" | 符号名带了目录 | 只用文件基名：`_binary_bbp_img_00_bin_start` |
-| 编译期报"不是常量表达式" | 用了 `end - start` 算长度 | 让 PC 脚本写死字面量 |
+| 链接期“未定义符号” | 符号名带了目录 | 只用文件基名：`_binary_bbp_img_00_bin_start` |
+| 编译期报“不是常量表达式” | 用了 `end - start` 算长度 | 让 PC 脚本写死字面量 |
 | 四角内容看不见 | BSP 圆角遮罩（半径 30） | 内容放在中心区 |
 | 图片不显示但日志正常 | 背光没点亮 | `bsp_display_backlight(100)` |
 | 屏幕内容是上一页的 | 换页前没 `lv_obj_clean()` | 见第 5 章页面契约 |
@@ -374,7 +374,7 @@ void show_image(lv_obj_t *parent, uint8_t idx)
 
 1. PC 上把原图**贴底色 → 等比缩放到 ≤240×240 → 转 RGB565 小端**；
 2. 绿通道掩码 **`0xFC`**，透明处贴 `UI_PAPER`；
-3. 脚本**打印"原始尺寸 → 输出尺寸 → 字节数"**并加断言；
+3. 脚本**打印“原始尺寸 → 输出尺寸 → 字节数”**并加断言；
 4. `EMBED_FILES` 链进 Flash，符号**只按文件基名**；
 5. 填 `lv_image_dsc_t`：**长度写字面量**，不能两个 extern 符号相减；
 6. `lv_img_create()` + `lv_img_set_src(&dsc)`，换图只是换指针；

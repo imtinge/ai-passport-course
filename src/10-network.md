@@ -5,7 +5,7 @@
 > **配套章节**：拿到网之后怎么用 → [10b 配网](10b-provisioning.md)（密码怎么进设备）、
 > [10c 获取网络数据](10c-network-data.md)（HTTP / HTTPS / 长连接 / OTA）。
 
-联网是 AI Passport 上最"重"的能力。它耗电、占内存、有失败可能，
+联网是 AI Passport 上最“重”的能力。它耗电、占内存、有失败可能，
 而且**失败是常态**——设备会离开 WiFi 范围、密码会变、路由器会重启、手机热点会睡。
 
 本章只回答一件事：**射频怎么起来、怎么知道连上了、断了怎么办。**
@@ -15,11 +15,11 @@
 ## 10.0 先决策：你的玩法真的需要联网吗
 
 联网不是默认项。官方 `main` 的 Wi-Fi demo **只扫描、不连接**（第 29 章），
-正是因为联网会一次性付出内存、功耗、复杂度和"失败要兜底"的成本。
+正是因为联网会一次性付出内存、功耗、复杂度和“失败要兜底”的成本。
 
 | 你的玩法 | 需要联网吗 | 说明 |
 | --- | --- | --- |
-| 本地小游戏、图鉴、计时器 | **不需要** | 别为了"以后可能用"先开 Wi-Fi |
+| 本地小游戏、图鉴、计时器 | **不需要** | 别为了“以后可能用”先开 Wi-Fi |
 | 天气 / 行情 / 日历 | 需要 | 但要能**离线显示上次数据** |
 | 语音对话（小智那类） | 需要 | 长连接 + 音频流，最吃资源（第 17 章） |
 | 与手机 App 交换少量数据 | 可以只用 BLE | 不出网也能通（第 10.7 节） |
@@ -35,7 +35,7 @@
 
 ## 10.1 Wi-Fi 的标准五步
 
-ESP-IDF 的 Wi-Fi 初始化比很多人预期的长，因为要显式建立"事件循环"：
+ESP-IDF 的 Wi-Fi 初始化比很多人预期的长，因为要显式建立“事件循环”：
 
 ```c
 // 1. 网络接口抽象层
@@ -63,7 +63,7 @@ esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
 esp_wifi_start();
 ```
 
-这三步"看起来像废话"的前置（`esp_netif_init` / 默认事件循环 / netif）**一次也不能省**，
+这三步“看起来像废话”的前置（`esp_netif_init` / 默认事件循环 / netif）**一次也不能省**，
 而且**整个进程只能做一次**。官方把它们抽成了 `main/demo_radio.c`：
 
 ```c
@@ -72,12 +72,12 @@ esp_err_t demo_radio_nvs_prepare(void);      // nvs_flash_init（Wi-Fi/BLE 都�
 esp_err_t demo_radio_network_prepare(void);  // esp_netif_init + 默认事件循环
 ```
 
-> 官方注释写得很直白："**只初始化，不在失败时擦除用户数据。**
-> NVS 里可能已有将来应用保存的凭据，示例无权为了起无线而清掉它。"
+> 官方注释写得很直白：“**只初始化，不在失败时擦除用户数据。**
+> NVS 里可能已有将来应用保存的凭据，示例无权为了起无线而清掉它。”
 > 这条也适用于你自己的应用：**不要为了起 Wi-Fi 就 `nvs_flash_erase()`**。
 
 > **生产环境别用便利创建器。** `esp_netif_create_default_wifi_sta()` 这类便利函数在
-> 分配失败或挂事件处理失败时**直接 assert 重启**。想让"没射频/内存不够"只是一次
+> 分配失败或挂事件处理失败时**直接 assert 重启**。想让“没射频/内存不够”只是一次
 > `ESP_ERR_NO_MEM` 而不是重启循环，就走第 29.3 节那条 **checked 分步链**
 > （`esp_netif_new` → `esp_netif_attach_wifi_station` → `esp_wifi_set_default_wifi_sta_handlers`，每步查返回值）。
 
@@ -110,7 +110,7 @@ ssid/ip/enabled/has_saved/radio_suspend/auto_connect……）。
 
 ---
 
-## 10.2 全部事件与"什么才算连上了"
+## 10.2 全部事件与“什么才算连上了”
 
 ### 事件清单（常用的就这几条）
 
@@ -119,16 +119,16 @@ ssid/ip/enabled/has_saved/radio_suspend/auto_connect……）。
 | `WIFI_EVENT_STA_START` | `esp_wifi_start()` 完成 | 调 `esp_wifi_connect()` |
 | `WIFI_EVENT_STA_CONNECTED` | **关联到 AP**（认证+关联成功） | 什么都不用做，**还没拿到 IP** |
 | `WIFI_EVENT_STA_DISCONNECTED` | 断开（含连接失败） | 读 `reason` 再决定重连 |
-| `IP_EVENT_STA_GOT_IP` | **DHCP 拿到 IP** | ★ 这才是"联网了"的唯一标志 |
+| `IP_EVENT_STA_GOT_IP` | **DHCP 拿到 IP** | ★ 这才是“联网了”的唯一标志 |
 | `IP_EVENT_STA_LOST_IP` | IP 丢了（通常伴随断开） | 标记离线，停掉正在跑的请求 |
 | `WIFI_EVENT_SCAN_DONE` | 扫描结束 | 取结果（第 10.4 节） |
 | `WIFI_EVENT_STA_BEACON_TIMEOUT` | 连续收不到 AP 信标 | 信号太弱/走远了，可提前标记离线 |
-| `WIFI_EVENT_AP_STACONNECTED` | SoftAP 下有终端连上（配网用） | 只是"加入热点" |
-| `IP_EVENT_AP_STAIPASSIGNED` | SoftAP 下给终端发了 IP（配网用） | **这才算"手机能打开网页"**（第 10b.4 节） |
+| `WIFI_EVENT_AP_STACONNECTED` | SoftAP 下有终端连上（配网用） | 只是“加入热点” |
+| `IP_EVENT_AP_STAIPASSIGNED` | SoftAP 下给终端发了 IP（配网用） | **这才算“手机能打开网页”**（第 10b.4 节） |
 
-> 一句话：**`WIFI_EVENT_STA_CONNECTED` 只表示"和路由器握上手"，
-> `IP_EVENT_STA_GOT_IP` 才表示"能发数据包"。**
-> 把连接成功当联网成功的 UI，几乎必然出现"连上了但请求全超时"。
+> 一句话：**`WIFI_EVENT_STA_CONNECTED` 只表示“和路由器握上手”，
+> `IP_EVENT_STA_GOT_IP` 才表示“能发数据包”。**
+> 把连接成功当联网成功的 UI，几乎必然出现“连上了但请求全超时”。
 
 ### 断开原因码（`wifi_event_sta_disconnected_t::reason`）
 
@@ -156,8 +156,8 @@ ESP_LOGW(TAG, "断开 ssid=%s rssi=%d reason=%d",
 | 203 | `ASSOC_FAIL` | 关联被拒（AP 满员 / 限速策略） |
 | 204 / 205 | `HANDSHAKE_TIMEOUT` / `CONNECTION_FAIL` | 握手超时、综合失败 |
 
-> 注意 15 / 202 是最常见的"用户输错密码"。**不要把 reason 藏起来**——
-> 在配网界面上把 202 翻译成"密码错误，请重输"，比一句"连接失败"有用得多。
+> 注意 15 / 202 是最常见的“用户输错密码”。**不要把 reason 藏起来**——
+> 在配网界面上把 202 翻译成“密码错误，请重输”，比一句“连接失败”有用得多。
 
 ---
 
@@ -187,10 +187,10 @@ static void schedule_reconnect(void)
 四条纪律：
 
 1. **永远不要在事件回调里 `while` 重试或 `vTaskDelay`**——回调跑在 Wi-Fi 事件任务，
-   阻塞它会导致后续事件堆积。要重连就"投递一个信号"给自己的工作/定时器；
-2. **对"密码错"这类确定性失败（2xx）不要无限重试**，回到配网界面让人重输；
+   阻塞它会导致后续事件堆积。要重连就“投递一个信号”给自己的工作/定时器；
+2. **对“密码错”这类确定性失败（2xx）不要无限重试**，回到配网界面让人重输；
 3. **退避要带抖动**，否则整屋设备在同一秒集体重连；
-4. **有上限 / 有放弃路径**：连不上 N 次就转"离线模式"，别让联网拖垮整个应用。
+4. **有上限 / 有放弃路径**：连不上 N 次就转“离线模式”，别让联网拖垮整个应用。
 
 > 想省电可以开 modem sleep：`esp_wifi_set_ps(WIFI_PS_MAX_MODEM)`
 > （收信标间隔由 `wifi_sta_config_t::listen_interval` 决定，默认 3 个信标周期）。
@@ -219,12 +219,12 @@ esp_wifi_scan_start(&scan, false);               // ★ block=false，非阻塞
    扫描 → 取结果 → 连接，串行进行；
 3. **结果必须取走**：扫描结果存在驱动的动态内存里，
    **只有 `esp_wifi_scan_get_ap_records()` / `esp_wifi_clear_ap_list()` 会释放它**。
-   内存紧张时这是很实在的一笔（IDF 注释原话：*"call any one to free the memory once the scan is done"*）；
+   内存紧张时这是很实在的一笔（IDF 注释原话：*“call any one to free the memory once the scan is done”*）；
 4. **先 `get_ap_num` 再 `get_ap_records`**（IDF 规定的顺序，官方 demo 照做）；
 5. **限制条数**、栈上定长数组、不 `malloc`——官方 demo 就是
    `wifi_ap_record_t records[5]`（第 29.5 节）；
-6. **每信道扫描时间上限 1500 ms**：IDF 明确写了"超过 1500 ms 可能导致 STA 断开连接"，
-   别为了"扫得全"把 `scan_time` 调大。
+6. **每信道扫描时间上限 1500 ms**：IDF 明确写了“超过 1500 ms 可能导致 STA 断开连接”，
+   别为了“扫得全”把 `scan_time` 调大。
 
 连接后想知道当前信号强度，不用再扫：
 
@@ -236,7 +236,7 @@ if (esp_wifi_sta_get_ap_info(&ap) == ESP_OK) {
 ```
 
 > RSSI 粗判：> -60 dBm 很好，-70 左右可用，< -80 dBm 就别指望稳定跑 HTTPS 了。
-> 把它做成"信号格"显示在 UI 上，比让用户猜"为什么加载不出来"友好得多。
+> 把它做成“信号格”显示在 UI 上，比让用户猜“为什么加载不出来”友好得多。
 
 ---
 
@@ -246,13 +246,13 @@ if (esp_wifi_sta_get_ap_info(&ap) == ESP_OK) {
 | --- | --- | --- |
 | 只存 RAM | `esp_wifi_set_storage(WIFI_STORAGE_RAM)` | **官方 demo 的选择**，零副作用 |
 | 交给 IDF | `esp_wifi_set_storage(WIFI_STORAGE_FLASH)` | STA 配置自动落 NVS，上电自动重连 |
-| 自己管 NVS | `nvs_set_str(handle, "wifi_ssid", ...)` | 想自己控制"保存 / 忘记"逻辑 |
+| 自己管 NVS | `nvs_set_str(handle, "wifi_ssid", ...)` | 想自己控制“保存 / 忘记”逻辑 |
 
 三条纪律：
 
 - **不要把密码打进日志、不要写进文档、不要提交到 Git**（官方 wifi-provisioning 文档明令禁止）；
 - NVS 键名 **≤ 15 字符**（第 9 章）；
-- **必须提供"忘记网络 / 清除凭据"的入口**，否则用户改了路由器密码就再也连不上，只能重刷固件。
+- **必须提供“忘记网络 / 清除凭据”的入口**，否则用户改了路由器密码就再也连不上，只能重刷固件。
 
 ---
 
@@ -262,16 +262,16 @@ if (esp_wifi_sta_get_ap_info(&ap) == ESP_OK) {
 
 | 失败场景 | 降级方案 |
 | --- | --- |
-| 没配过网 | 显示"请先配网"引导，其他功能照常 |
+| 没配过网 | 显示“请先配网”引导，其他功能照常 |
 | 配过但连不上 | 显示离线状态，**缓存上次的数据** |
-| 连上了但服务器挂了 | 显示"服务不可用"，保留上次数据 |
+| 连上了但服务器挂了 | 显示“服务不可用”，保留上次数据 |
 | 2.4 GHz 配网失败 | 提示改用 BLE 配网 |
 
-> 一条社区提醒："2.4 GHz Wi-Fi 配网失败降级"被列为出行类玩法的必做项。
+> 一条社区提醒：“2.4 GHz Wi-Fi 配网失败降级”被列为出行类玩法的必做项。
 > ESP32-C3 **只支持 2.4 GHz**，不支持 5 GHz——如果你的手机热点是 5 GHz，
 > 设备根本搜不到，这不是 bug。
 
-## 10.7 刷新节流与"唯一所有者"
+## 10.7 刷新节流与“唯一所有者”
 
 联网玩法最容易犯的错是**刷新太频繁**。PokeWalk 的后台任务里有一段专门的扫描节流逻辑：
 
@@ -291,20 +291,20 @@ if (s_wifi_ok && scan_allowed && now >= next_scan) {
 - 扫描结果稳定时可以拉长间隔。
 
 > 作者的教训很有代表性：
-> "扫描原本绑在 Collect 页的 `lv_timer` 上，离开那页就停，
-> 导致一晚上的采集数据全丢。"
+> “扫描原本绑在 Collect 页的 `lv_timer` 上，离开那页就停，
+> 导致一晚上的采集数据全丢。”
 
 **联网任务不该依附于任何页面。** 这是第 16 章的核心内容。
 
 同理，射频的所有权也要唯一。PokeWalk 的注释：
 
-> "world 是 WiFi 的**唯一所有者**（Collect 页原本自己 bring_up，
-> 两个所有者会争同一个射频）。"
+> “world 是 WiFi 的**唯一所有者**（Collect 页原本自己 bring_up，
+> 两个所有者会争同一个射频）。”
 
 **一个射频只能有一个主人。** 如果你的代码里有两个地方各自调
 `esp_wifi_init()` / `esp_wifi_start()`，它们会互相打断。
 把联网收敛到一个后台任务（或 BSP 封装）里，
-其他模块通过"请求/订阅"的方式拿数据。
+其他模块通过“请求/订阅”的方式拿数据。
 
 ---
 
@@ -334,9 +334,9 @@ if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) == ESP_OK) {
   （第 10c.3 节）。所以顺序是：**连上 → 校时 → 发 HTTPS 请求**。
 - 有项目明确记录了这一点：
 
-> "`is_night` 仍写死 false —— 判夜要墙钟时间，现在只有开机微秒数。"
+> “`is_night` 仍写死 false —— 判夜要墙钟时间，现在只有开机微秒数。”
 
-也就是说，没校时之前，你没法判断"现在是白天还是晚上"。
+也就是说，没校时之前，你没法判断“现在是白天还是晚上”。
 这是个很典型的嵌入式约束。
 
 ---
@@ -358,12 +358,12 @@ BLE 常用于：
 
 初始化比 Wi-Fi 简单些，但内存开销不小。有实测记录：
 
-> "联机占约 **73 KB 堆**，而串口截图要静态预留整屏 320×240，
-> 因此默认固件带 LINK PLAY，截图工具改为可选构建。"
+> “联机占约 **73 KB 堆**，而串口截图要静态预留整屏 320×240，
+> 因此默认固件带 LINK PLAY，截图工具改为可选构建。”
 
 **73 KB 堆**——在没有 PSRAM、总可用堆约 230 KB 的板子上，这是三分之一。
-所以很多项目会**砍掉 BLE 换内存**（PokeWalk 就明确说"比上游固件多 44 KB，
-因为砍了 BLE"）。
+所以很多项目会**砍掉 BLE 换内存**（PokeWalk 就明确说“比上游固件多 44 KB，
+因为砍了 BLE”）。
 
 > NimBLE 和 Wi-Fi **不是免费共存**的：它们共享同一个 2.4 GHz 射频，
 > ESP32-C3 靠软件共存机制分时。同时跑 Wi-Fi 吞吐 + BLE 广播/连接时，
@@ -402,7 +402,7 @@ CONFIG_LWIP_IPV6=n
 > `heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)` 看最大连续块（第 11 章）。
 > 官方经验文档给过一个很直观的例子：启动 SoftAP 前最大连续块约 **13 KiB**，
 > 把音频改成延迟初始化并释放 codec/I2S 后升到约 **31 KiB**。
-> **"延迟初始化"比"从每个网络缓冲里抠几个字节"有效得多。**
+> **“延迟初始化”比“从每个网络缓冲里抠几个字节”有效得多。**
 
 ---
 
@@ -443,4 +443,4 @@ CONFIG_LWIP_IPV6=n
 - 拿到网怎么取数据 → [10c. 获取网络数据](10c-network-data.md)；
 - 没有 PSRAM 怎么活 → 第 11 章。
 
-> 官方把"STA 扫描（不连接）"和"NimBLE 非连接广播"做成健壮实例（含 Wi-Fi/BLE 栈的逆序回滚与停止握手）的逐行源码，分别见第 29 章（Wi-Fi 示例）和第 30 章（BLE 示例）。
+> 官方把“STA 扫描（不连接）”和“NimBLE 非连接广播”做成健壮实例（含 Wi-Fi/BLE 栈的逆序回滚与停止握手）的逐行源码，分别见第 29 章（Wi-Fi 示例）和第 30 章（BLE 示例）。
