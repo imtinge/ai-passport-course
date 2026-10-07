@@ -4,7 +4,8 @@
 因为 `bsp_audio_write()` 是**阻塞**调用：I2S 缓冲区满了它就等着。
 
 本章代码来自两部分：**官方 `main/demo_audio.c`**（在 `folotoy/ai-passport` 里）+ **作者工作副本的 `main/demo_barbapapa.c`**（第 18 章，巴巴爸爸项目），
-配套可编译文件 `snippets/05_audio_play.c` 和 `snippets/06_audio_worker.c`。
+配套可编译文件 `snippets/05_audio_play.c`（发声与分块）、`snippets/06_audio_worker.c`（worker 与停止握手）、
+`snippets/07_audio_drain.c`（**收尾**：等 DMA 排空再断电、`sleep()` 单向门的正确用法）。
 
 ---
 
@@ -333,6 +334,49 @@ while (got < total && !s_cancel) {
 - `prepare_deep_sleep()` **不能用于 light sleep**——它把 I2S 引脚设成高阻，
   唤醒后 I2S 在本次运行里就废了，只能重启。
 
+### ⚠ `sleep()` 是一个不可逆的单向门
+
+这条不在任何官方文档里，是实战排查出来的，但它解释了
+**"设备用着用着突然一点声音都没有了"**这个最难查的故障：
+
+```c
+// bsp_audio.c 内部的状态（简化）
+static bool s_sleeping = false;          // ← sleep() 置 true
+static bool s_opened   = false;          // ← sleep() 置 false
+static esp_codec_dev_handle_t s_dev;     // ← sleep() 置 NULL
+```
+
+`sleep()` 之后，你在第 21.2 节学的那套调用会**全部静默失败**：
+
+| 调用 | sleep() 之后的行为 |
+|---|---|
+| `bsp_audio_set_format()` | 第一行 `if (s_sleeping) return ESP_ERR_INVALID_STATE`，**直接失败** |
+| `bsp_audio_write()` | 内部 `!s_dev` → 返回失败，**一个字节都写不出去** |
+| `bsp_audio_set_volume()` | 值被记住，但 codec 没在工作，听不到变化 |
+
+注意这些失败是**静默的**——`ESP_LOGW` 可能只打一行 `invalid state`，
+UI 上看不出任何异常，你就只看到"没声音"。
+
+```c
+// ❌ 典型错误：为了省电 sleep，然后忘了 wake
+bsp_audio_sleep();
+// ... 过了很久 ...
+bsp_audio_set_format(16000, 16, 1);   // 返回 ESP_ERR_INVALID_STATE（你没检查）
+bsp_audio_write(pcm, n);              // 失败，静默无声
+
+// ✅ 正确：用之前一定先 wake
+bsp_audio_wake();                     // 幂等，重复调用无害
+bsp_audio_set_format(16000, 16, 1);
+bsp_audio_write(pcm, n);
+```
+
+**排查口诀**：设备"本来有声音，后来没了"→ 第一步查"是不是有代码路径调用了
+`bsp_audio_sleep()` 却没有配对的 `wake()`"。官方 `demo_low_power.c` 是唯一用到它的地方，
+所以自己写休眠相关页面时要格外小心。
+
+> 顺带一句：正因为 `sleep()` 会复位这些内部状态，**它必须在 light sleep 前后成对出现**。
+> 官方源码注释也强调了同一件事 —— "只要尝试过 suspend，即使没真正睡着也必须调 `wake()`"。
+
 **开机爆音**是另一回事（ES8311 上电时序），详见第 7 章。
 
 ---
@@ -352,6 +396,14 @@ while (got < total && !s_cancel) {
 | 录音失败，日志没报错 | `malloc` 96 KB 失败但没检查返回值 | 必须检查并打日志 |
 | 休眠后电流没降 | 没调 `bsp_audio_sleep()` | light sleep 前调用；它在未播放时也有效 |
 | deep sleep 后喇叭滋滋响 | 用了 `sleep()` 而不是 `prepare_deep_sleep()` | deep sleep 必须用后者 |
+| **本来有声音，之后突然全没了** | 某条路径调了 `bsp_audio_sleep()` 却没有配对的 `wake()` | 见 21.8「单向门」：sleep 后 `set_format`/`write` 全部静默失败。先补 `bsp_audio_wake()` |
+| **关机/深睡前播的语音听不到** | DMA 未排空就被 `i2s_channel_disable()` 掐断 | 写完等 `vTaskDelay(bytes/32 + 120)`，见第 7.2 节 |
+| **只有一小截声音就被切断** | 同上，尾段被丢 | 同上；`+120ms` 余量是覆盖 PA 上电斜坡的，别省 |
+
+> **分辨"没播"和"没播完"是排查的第一步**：
+> 一个字都听不到 → 查 `set_format()` 返回值和有没有漏 `wake()`；
+> 听到开头就断 → 查 DMA 排空等待。
+> 这两种症状的根因完全不同，先分清楚能省一半时间。
 
 ---
 
@@ -366,9 +418,13 @@ while (got < total && !s_cancel) {
 5. `stop()` **超时返回 `ESP_ERR_TIMEOUT`**，让框架中止退出；
 6. PCM 用 `EMBED_FILES` 链进 Flash，**不占 RAM**，WAV 剥头时 `assert` 格式；
 7. 切采样率交给 `bsp_audio_set_format()`（它内部 close-then-open）；
-8. light sleep 用 `sleep()/wake()`，deep sleep 用 `prepare_deep_sleep()`，**别混**。
+8. light sleep 用 `sleep()/wake()`，deep sleep 用 `prepare_deep_sleep()`，**别混**；
+9. **`sleep()` 是单向门**——之后 `set_format`/`write` 全部静默失败，用之前必须 `wake()`；
+10. **`write()` 返回 ≠ 声音响完**：要关 I2S/断电前，先等 `bytes/32 + 120` ms 让 DMA 排空。
 
-可编译示例：`snippets/05_audio_play.c`、`snippets/06_audio_worker.c`。
+可编译示例：`snippets/05_audio_play.c`、`snippets/06_audio_worker.c`、
+`snippets/07_audio_drain.c`（**这一份**专门解决"最后一句语音被掐断"和
+"`sleep()` 之后再也播不出声"，是本章最容易踩的两个坑）。
 
 到这里，中文、图片、声音三件套都齐了。
 接下来第 22 章讲这三件事出问题时的通用调试手段。

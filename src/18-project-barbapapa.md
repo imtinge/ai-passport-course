@@ -89,6 +89,66 @@ if (channels, rate, bits) != (1, 16000, 16):
 
 > 这个 16k/16bit/1 必须和页面里 `bsp_audio_set_format(16000, 16, 1)` 完全一致，否则变调/杂音。
 
+### ⚠ 多音字：TTS 会把"的"读成"dí"
+
+离线 TTS 有个和产品体验直接相关的问题：**多音字它不一定读对**。
+本机 Microsoft Huihui 在合成"我们是大美的好朋友"时，
+把"的"读成了 **dí**（像"的确"），而正确读法是中性的轻声 **de**。
+
+代码、资源、设备都没问题——**是语音素材本身就是错的**。
+这类问题只在设备上播放时才暴露，而且很容易被误判成"解码不对"。
+
+解法是用 **SSML 的 `<phoneme>` 标签强制读音**：
+
+```xml
+<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="zh-CN">
+  我们是大美<phoneme alphabet="zh" ph="de5">的</phoneme>好朋友
+</speak>
+```
+
+`ph="de5"` 的含义：`de` 是拼音，**末尾数字是声调**，`5` = 轻声。
+所以 `de5` = "的"的中性轻声。常用对照：
+
+| 想要的字 | 错读 | 强制写法 |
+|---|---|---|
+| 的（轻声） | dí | `ph="de5"` |
+| 了（轻声） | liǎo | `ph="le5"` |
+| 重（重复） | zhòng | `ph="chong2"` |
+| 行（可以） | xíng（行业 háng） | `ph="xing2"` |
+
+注意 `alphabet="zh"` 不要省——不写的话 SAPI 会按通用 IPA 去解释 `de5`，结果不可预期。
+
+Python 侧（替代 PowerShell 的 `make_tts.ps1`，便于和素材管线用同一种语言）：
+
+```python
+import comtypes.client as cc
+
+SVSFParseSsml = 128        # SPF_PARSE_SSML：让引擎按 SSML 解析输入
+
+voice = cc.CreateObject("SAPI.SpVoice")
+for v in voice.GetVoices():                      # 挑一个中文语音
+    if "Chinese" in str(v.GetDescription()):
+        voice.Voice = v
+        break
+
+stream = cc.CreateObject("SAPI.SpFileStream")
+stream.Open(str(wav_path), 4)                    # 4 = SSFMCreateForWrite
+voice.AudioOutputStream = stream
+voice.Speak(ssml_text, SVSFParseSsml)            # ← 关键是这个 flag
+stream.Close()
+voice.AudioOutputStream = None
+```
+
+> **判别 SSML 有没有生效**：SSML 必须配 `SVSFParseSsml` 这个 flag 提交。
+> 如果 flag 传 0（当作纯文本），`<phoneme>` 会被逐字念出来，反而更糟。
+> 合成后先检查产出的 WAV 大小——若只有几十字节（空音频），
+> 说明 SSML 格式有问题被引擎拒绝了。
+
+Shinku/PokeWalk 那条线的经验是：**音效素材一旦进了 `.rodata`，
+改一个字的读音要重新走一遍"合成 → 剥头 → 生成 assets → 编译 → 烧录"，
+成本远高于第一次就多听一遍。** 建议在合成脚本里保留原始 SSML 文本，
+并把"逐条试听"列进发布前的验收清单。
+
 ### 字体：16 个汉字，两种字号，`--bpp 4`
 
 `gen_font.ps1:15-28` 把 10 个名字去重得 **16 个码点**，用 Windows 自带的 `simhei.ttf`（单 face TTF，

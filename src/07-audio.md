@@ -36,7 +36,72 @@ bsp_audio_set_volume(80);
 bsp_audio_write(pcm_buffer, samples * 2);
 ```
 
-**`bsp_audio_write` 是阻塞的**——它会一直等到 codec 把数据吃完。
+### ⚠ `write` 返回 ≠ 声音已经响完
+
+这是很多人第一次做音频都会搞错的一件事，**也是本书要纠正的一个常见误解**：
+
+> **`bsp_audio_write()` 阻塞的终点是"I2S 的 DMA 缓冲收下了数据"，
+> 不是"喇叭把这段声音放完了"。**
+
+调用链是这样的（`esp_codec_dev` → 驱动 → HAL）：
+
+```
+bsp_audio_write(pcm, bytes)
+  └─ esp_codec_dev_write()
+       └─ audio_codec_data_i2s.c: _i2s_data_write()
+            └─ i2s_channel_write(tx_chan, ...)     // 拷进 DMA 环形缓冲即返回
+```
+
+最后那一步 `i2s_channel_write()` 只是把数据**推进 DMA 队列**。
+它返回成功时，声音还在队列里排队，喇叭可能一个字都没出。
+真正的播放由 DMA 在后台按采样时钟慢慢送出。
+
+为什么会咬人？因为**DMA 不会因为你停 I2S 就把剩下的播完**：
+
+```
+工作流程：  write(全部数据) ──► DMA 边排队边播放 ──► 真正出声
+                              ▲
+                              └── 如果你在这里 i2s_channel_disable()
+                                  队列里剩下的数据直接被丢弃，声音被掐断
+```
+
+而 `bsp_audio_prepare_deep_sleep()` 内部恰好就有这句 `i2s_channel_disable()`。
+**所以"播完再关机"必须你自己保证**——驱动程序不会替你等。
+
+### 怎么等：按字节数算出来
+
+16 kHz / 16 bit / 单声道，每秒 = 16000 × 2 = **32000 字节**。
+所以时长就是 `字节数 ÷ 32000` 秒：
+
+```c
+// 写完 PCM 之后、决定动 I2S 之前，显式等它播完
+static void wait_audio_drained(size_t bytes_written)
+{
+    // 16kHz/16bit/mono：1 秒 = 32000 字节
+    uint32_t ms = (uint32_t)(bytes_written / 32);     // 字节数 / 32000 * 1000
+    vTaskDelay(pdMS_TO_TICKS(ms + 120));              // +120ms 覆盖 PA 上电斜坡与尾段
+}
+```
+
+> `bytes_written / 32` 就是 `bytes * 1000 / 32000` 的约简形式——
+> 用整数除法即可，**不需要 `uint64_t`**（几万字节远在 32 位范围内）。
+
+> **可编译版**：这段话连同"播完道别语再关机"的完整序列，见
+> `snippets/07_audio_drain.c`（`wait_audio_drained()` + 深睡收尾 + `sleep()` 单向门的正确用法）。
+
+**什么时候必须等**：
+
+| 场景 | 要不要等 | 为什么 |
+| --- | --- | --- |
+| 播完就进 deep sleep / 关机 | **必须等** | 否则一句都说不出来就被断电 |
+| 播完调用 `bsp_audio_prepare_deep_sleep()` | **必须等** | 它内部会 `i2s_channel_disable()` |
+| 播完调用 `bsp_audio_sleep()` | 建议等 | suspend 会停 codec |
+| 接着播下一段（同格式） | 不用等 | DMA 会自己续上，等待反而造成断续 |
+| 页面照常运行、什么都不关 | 不用等 | 让它自然播完即可 |
+
+> 一句话记法：**只要下一步要"关音频/关 I2S/断电"，就得先等；
+> 只是接着用，就不用管。**
+
 这一点决定了下一条规则。
 
 ## 7.3 规则：播放必须在自己的任务里
@@ -191,15 +256,33 @@ PCM 是 32 KB/s（16 kHz × 16 bit），**Opus 压到 3 KB/s**。
 
 ## 7.8 深睡前的音频关闭顺序
 
-音频和电量计共用 I2C，所以关闭顺序有讲究：
+音频和电量计共用 I2C，所以关闭顺序有讲究。而且要注意：**如果关机前还有语音要播，
+必须先按 7.2 的算法等 DMA 排空**，否则 `prepare_deep_sleep()` 一停 I2S，
+道别语就永远留在队列里出不来了：
 
 ```c
+// 0) 有道别/提示音要播的，先播，再【等它真的放完】
+bsp_audio_write(bye_pcm, bye_bytes);
+wait_audio_drained(bye_bytes);          // ← 见 7.2，少了这步声音会被掐断
+
+// 1~4) 按依赖顺序收尾
 bsp_battery_sleep();                    // 1. 先让电量计写完
 bsp_audio_sleep();                      // 2. codec 睡眠
-bsp_audio_prepare_deep_sleep();         // 3. 释放 I2S 引脚
+bsp_audio_prepare_deep_sleep();         // 3. 释放 I2S 引脚（内部 disable I2S）
 bsp_i2c_prepare_deep_sleep();           // 4. 最后释放共享 I2C
 // 5. 再关屏幕、进深睡
 ```
+
+**顺序一句话**：`等播完 → 电量计 → codec → I2S 引脚 → I2C`。
+
+> 一个真实的分岔场景：设备长按关机要播"再见"，但**用户听不到**。
+> 排查时先问一句"是没播，还是没播完就断了"——两者的根因完全不同：
+>
+> | 现象 | 根因 | 定位方法 |
+> | --- | --- | --- |
+> | 一个字都听不到 | `write` 之前就失败了（格式没设 / codec 已 suspend） | 检查 `set_format()` 返回值，检查有没有漏调 `bsp_audio_wake()` |
+> | 听到开头一小截就断 | DMA 没排空就被 `i2s_channel_disable()` | 补 `wait_audio_drained()` |
+> | 完整听得到 | 正常工作 | — |
 
 > 源码注释（Shinku `demo_low_power.c`）：
 > "CW2017 与 ES8311 共用 I2C，必须先完成电量计写入/回读。"
@@ -227,10 +310,12 @@ bsp_i2c_prepare_deep_sleep();           // 4. 最后释放共享 I2C
 
 - BSP 只吃 **PCM**：`bsp_audio_write(pcm, 字节数)`，解码是你自己的事；
 - **`write`/`read` 阻塞** → 必须放独立任务；
+- **`write` 返回 ≠ 声音响完**（阻塞只到 DMA 收下数据）：
+  要关 I2S /  codec / 断电之前，按 `字节数/32 + 120ms` 显式等待排空；
 - 大栈任务用**静态栈常驻**，别反复 `xTaskCreate`（会碎片化到"只停不播"）；
 - **C3 上就用 16 kHz**，别重采样；
 - `app_main` 第一件事应该是**静音**；
-- 深睡前按顺序关：电量计 → codec → I2S 引脚 → I2C，且**容忍失败**。
+- 深睡前按顺序关：**等播完 →** 电量计 → codec → I2S 引脚 → I2C，且**容忍失败**。
 
 下一章讲电量、熄屏和深睡的完整流程。
 

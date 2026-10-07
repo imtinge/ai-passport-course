@@ -91,6 +91,10 @@ idf.py monitor   # 新版本会自动解析地址成 文件:行号
 | **固件太大编译不过** | app 分区不够 | 加大分区或砍功能（3 MB 是契约上限） |
 | **睡了醒不过来** | 引脚号当位掩码传了 | `gpio_wakeup_enable(GPIO_NUM_0, ...)` |
 | **播一次声音后就不播了** | 堆碎片化，`xTaskCreate` 失败 | 改常驻任务 + 静态栈 |
+| **本来有声音，之后突然没了** | 走过 `bsp_audio_sleep()` 却没有配对的 `wake()` | 之后 `set_format`/`write` 静默失败；用前先 `wake()`（第 21.8 节） |
+| **关机/深睡前的播报听不到** | DMA 未排空就被 `i2s_channel_disable()` 掐断 | 写完等 `bytes/32 + 120` ms（第 7.2 节） |
+| **串口满屏 `ClearCommError`，读不到日志** | 设备在 **deep sleep**，USB-Serial-JTAG 随 SoC 断电 | 先上电唤醒再抓；端口在 ≠ SoC 在跑（第 22.8 节） |
+| **设备正常跑但日志一个字节都没有** | 控制台被配成 UART0（TX=GPIO21，与背光冲突） | 保持走 USB-Serial-JTAG（第 22.8 节） |
 
 ## 22.4 15 条运行时红线
 
@@ -102,7 +106,9 @@ idf.py monitor   # 新版本会自动解析地址成 文件:行号
 3. **页面退出顺序**：先 `stop()` 停掉会访问 UI 的任务/定时器（拿到停止确认再继续），
    再 `exit()` 删 screen 并置空指针；**stop 超时应中止本次退出并允许重试**。
 4. **音频阻塞与串行**：`bsp_audio_write/read` 放任务里；
-   格式切换/睡眠/唤醒串行，切换前停 PCM。
+   格式切换/睡眠/唤醒串行，切换前停 PCM；
+   **`sleep()` 是单向门**（之后必须 `wake()` 才恢复），
+   **`write()` 返回 ≠ 声音响完**（要关 I2S/断电前须按 `bytes/32 + 120ms` 等 DMA 排空）。
 5. **I2C/I2S/ADC 唯一实例**：总线由 BSP 持有，不要重复 `i2c_new_master_bus`、
    不要新建 I2S；自定义 I2C 设备用 `bsp_i2c_bus()` 挂接；
    **不要再建第二个 ADC1 unit 或重配 GPIO0**。
@@ -370,18 +376,107 @@ ESP_LOGI(TAG, "min ever: %u", esp_get_minimum_free_heap_size());
 ```
 1. 日志有没有输出？        → 没有：烧录/串口/供电问题
 2. app_main 跑到了哪一行？  → 加日志定位
-3. panic 是什么类型？       → 对照 19.2 的表
+3. panic 是什么类型？       → 对照 22.2 的表
 4. 最小可用内存是多少？     → < 20 KB 就是内存问题
 5. 最近改了什么？           → git diff
 ```
 
 **第 5 条看似废话，但在嵌入式开发里命中率极高。**
 
-## 22.8 小结
+## 22.8 连日志都抓不到的时候
+
+上面第 1 步是"日志有没有输出"。**这一步本身失败时，整套调试方法就断了**——
+没有日志，你连 `app_main` 跑到哪一行都不知道。而这件事在本板上会用一个很有迷惑性的方式失败。
+
+### 症状：`ClearCommError failed`
+
+用 Python（pyserial）自己抓串口时，满屏刷这个错：
+
+```
+串口异常: ClearCommError failed (PermissionError(13, '设备不识别此命令。', None, 22))
+```
+
+端口**打得开**（设备管理器里 COM 口在、`list_ports` 也能列出 ESP32-C3），
+但**一个字节的应用日志都读不出来**。这时不要怀疑脚本、也不要怀疑线材：
+先看设备当前是不是**处于 deep sleep**。
+
+**原因**：ESP32-C3 的"串口"不是独立 USB 转串口芯片，而是芯片内部的
+**USB-Serial-JTAG 外设**。它在 SoC 内部，**deep sleep 时随 SoC 一起断电**。
+USB 描述符可能还挂在总线上（所以 COM 口"在"），但设备已无法响应任何读命令。
+
+```
+设备运行中   → USB-Serial-JTAG 有电 → monitor 正常
+设备 deep sleep → SoC 断电           → COM 口在，但读命令全部失败
+设备刚被硬复位 → USB 重新枚举中      → 端口短暂不可用
+```
+
+**判断方法**：
+
+```python
+import serial.tools.list_ports as lp
+for p in lp.comports():
+    print(p.device, p.description, p.hwid)
+# 能看到 VID:PID=303A:1001 → 是 ESP32-C3 原生 USB，但【这只能证明 USB 描述符在，
+#                              不能证明 SoC 在跑】
+```
+
+**解法**：**先给设备上电/复位把它唤醒，再抓**。
+如果你的抓取脚本要在"设备可能还没醒"的时候启动，得让它具备断点重连能力：
+
+```python
+while time.time() < deadline:
+    try:
+        with serial.Serial(PORT, 115200, timeout=1) as ser:
+            log.write("port opened\n")
+            while time.time() < deadline:
+                data = ser.read(ser.in_waiting or 1)
+                if data: log.write(data.decode('utf-8', 'replace'))
+    except Exception as e:
+        log.write(f"串口异常: {e}\n")     # ← 记一笔就重试，别让它中断整个脚本
+        time.sleep(1.0)
+```
+
+> 关键点是"**异常记一笔就重试，而不是让它往上抛**"。
+> 否则脚本在设备休眠期一上来就死掉，你永远等不到设备上电那一刻。
+
+### 第二个可能：日志根本没从 USB 口出来
+
+如果设备**明明在运行**（屏幕亮着、有声音），但 monitor 依然一个字节都没有，
+那要查的是**控制台被路由到了哪里**。`sdkconfig` 里这几项决定日志出口：
+
+```
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y     ← 想要走原生 USB
+CONFIG_ESP_CONSOLE_UART=y                ← 想要走 UART0 引脚（TX 在 GPIO21！）
+CONFIG_ESP_CONSOLE_UART_NUM=0
+CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
+```
+
+本板**必须走 USB-Serial-JTAG**（第 3.2 节"坑 4"）：
+UART0 的默认 TX 是 **GPIO21，和背光是同一个引脚**——把日志改回 UART0，
+不只屏幕背光会出问题，你也读不到任何东西。
+
+### 抓日志的可靠顺序
+
+```
+1. 确认设备在运行（屏幕亮 / 有声音 / 按 RST 有反应）
+   └─ 没反应 → 先上电唤醒，deep sleep 状态下串口是不存在的
+2. 确认没有别的程序占着端口（idf.py monitor / 另一个串口助手 / WSL 转发）
+3. esptool 能连上 ≠ 日志能读到
+   └─ esptool 走的是 ROM 下载协议，SoC 休眠时它照样能复位芯片
+4. 用 idf.py monitor 而不是自己写脚本（它已处理重连与解码）
+   └─ 非要自写脚本，就按上面的"异常重试"写，别让异常终止脚本
+```
+
+> 这套现象容易误判成"脚本 bug"或"串口线坏了"，实际耗掉的时间远超它本身的价值。
+> 记住一句：**端口在 ≠ SoC 在跑**。
+
+## 22.9 小结
 
 - 日志是第一工具，**内存和栈的三个数字要常打**；
+- **抓不到日志时先问"设备醒着吗"**——deep sleep 时 USB-Serial-JTAG 随 SoC 断电，
+  端口在 ≠ SoC 在跑；日志出口必须保持 USB-Serial-JTAG，不能改回 UART0；
 - panic 类型决定方向：LoadProhibited = 野指针，
   Stack protection = 栈溢出，watchdog = 不让出 CPU；
-- 19.3 那张症状对照表值得打印贴墙；
+- 22.3 那张症状对照表值得打印贴墙；
 - 定位靠二分注释 / 最小复现 / **搬到 PC 上跑**；
 - **编译通过 ≠ 硬件验证**。

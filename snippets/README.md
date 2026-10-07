@@ -23,8 +23,9 @@ python check_snippets.py 03 04      # 只编 03、04
   OK    04_image_rgb565.c
   OK    05_audio_play.c
   OK    06_audio_worker.c
+  OK    07_audio_drain.c
 
-通过 6/6
+通过 7/7
 ```
 
 ## 为什么值得这么做
@@ -58,3 +59,4 @@ python check_snippets.py 03 04      # 只编 03、04
 | `04_image_rgb565.c` | EMBED_FILES + `lv_image_dsc_t` | **20**、D.5 |
 | `05_audio_play.c` | 四步发声、分块播放、录音 | **21**、D.7 |
 | `06_audio_worker.c` | worker + 任务通知 + 停止握手 | **21**、D.14 |
+| `07_audio_drain.c` | **`write` 返回 ≠ 声音响完**：按字节算时长等 DMA 排空，再关 I2S/断电；附 `sleep()` 单向门的正确用法 | **7.2 / 7.8**、**21.8**、D.7 |

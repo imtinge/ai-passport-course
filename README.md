@@ -21,7 +21,7 @@ mdbook serve --open           # 本地预览，默认 http://localhost:3000
 
 ## 验证示例代码（snippets）
 
-`snippets/` 下 6 个 `.c` 都用官方工程同一套编译参数（含 `-Werror`）编过：
+`snippets/` 下 7 个 `.c` 都用官方工程同一套编译参数（含 `-Werror`）编过：
 
 ```bash
 cd snippets

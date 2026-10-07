@@ -187,6 +187,71 @@ Project build complete. To flash, run:
  idf.py -p (PORT) flash
 ```
 
+### 3.3.1 当 `idf.py build` 在你机器上跑不起来（Windows 实战）
+
+Windows 上 `idf.py build` 有时会这样失败——注意**它甚至没进 CMake**：
+
+```
+CreateProcess failed: ...
+```
+
+这时不要去改代码，**直接绕过 `idf.py`，用 ninja 构建**。
+`idf.py build` 本身只是 CMake + ninja 的包装，而 CMake 配置已经在
+`set-target` 阶段生成好了（`build/build.ninja` 里写死了工具链绝对路径），
+所以绕开包装层完全可行：
+
+```powershell
+$env:IDF_PATH = 'D:/esp/espressif/frameworks/esp-idf-v5.5.3'
+& 'D:/esp/mingw64/bin/ninja.exe' -j4 -C D:/路径/到/项目/build *> build\build.log
+Write-Host ('NINJA_EXIT=' + $LASTEXITCODE)
+```
+
+三个都是踩出来的要点：
+
+**① ninja 要用绝对路径。**
+直觉做法是先 dot-source 官方的 `Initialize-Idf.ps1` / `export.ps1` 把 ninja 放进 PATH，
+再 `& ninja`。但这套脚本在某些机器上会因 `idf-env` 查询返回 null 而**静默装配失败**——
+脚本不报错，可 PATH 里既没有 ninja 也没有 Python。
+结果是下一行 `& ninja` 根本没执行，日志是空的、二进制时间戳还是上一次的，
+看起来却像"构建成功"。判据：**构建完看一眼 `.log` 有没有内容、二进制 mtime 有没有变。**
+
+**② 重定向用 `*>`，不要用 `|`。**
+
+```powershell
+# ✅ 所有流写文件
+& ninja -j4 -C build *> build\build.log
+# ❌ 管道写法可能在满屏 Git/msys 噪声下中断脚本
+& ninja -j4 -C build | Tee-Object build\build.log
+```
+
+原因是 Windows PowerShell 在收到 native 命令写到 stderr 的内容时会触发
+`NativeCommandError`，而 IDF 工具链（尤其 msys 的 `git-submodule` 之类）
+往 stderr 写东西很正常。用 `*>` 全流重定向到文件就绕开了这个行为。
+**作为方法论：Windows 上跑长构建，一律"命令 + `*>` 落盘 + 回来读日志"，
+不要指望管道回显。**
+
+**③ 校验退出码，别只看"跑完了"。**
+
+```powershell
+& $ninja -j4 -C build *> build\build.log
+Write-Host ('NINJA_EXIT=' + $LASTEXITCODE)     # 必须是 0
+```
+
+然后回头 grep 日志：
+
+```bash
+grep -c -iE "error:|warning:" build/build.log   # 期望 0
+tail -5 build/build.log
+```
+
+> 这套"ninja 绝对路径 + `*>` 落盘 + 查退出码"的组合，
+> 本质是把不确定环节收敛到一个地方：**日志**。
+> 编译这个动作本身不难，难的是"你以为它在编译，其实它没有"。
+
+同样的思路适用于烧录：`python -m esptool ... write_flash` 之后也要确认
+日志里有 `Hash of data verified` 和 `Hard resetting`，
+而不是只看命令"跑完了"。
+
 ## 3.4 烧录与监控
 
 ```bash
@@ -355,6 +420,7 @@ idf.py erase-flash          # 全片擦除（谨慎）
 
 - 版本：**学开发用 5.5.3，做 AI 语音直接上 6.1**；
 - Windows 用 "ESP-IDF CMD" 终端，Linux 记得 `source export.sh`；
+- `idf.py build` 跑不起来时用 **ninja 绝对路径 + `*>` 落盘**（3.3.1），并校验退出码；
 - `set-target esp32c3` 只在首次/换芯片时跑；
 - 监视器退出是 `Ctrl+]`；
 - 合并镜像可能覆盖 NVS，刷之前想清楚；

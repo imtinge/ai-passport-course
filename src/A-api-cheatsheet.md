@@ -57,13 +57,28 @@ esp_err_t bsp_audio_set_format(uint32_t hz, uint8_t bits, uint8_t ch);
 esp_err_t bsp_audio_write(const void *pcm, size_t bytes);   // 阻塞！放任务里
 esp_err_t bsp_audio_read(void *pcm, size_t bytes);          // 阻塞！
 void bsp_audio_set_volume(uint8_t percent);
-esp_err_t bsp_audio_sleep(void);
-esp_err_t bsp_audio_wake(void);
-esp_err_t bsp_audio_prepare_deep_sleep(void);
+esp_err_t bsp_audio_sleep(void);                            // ⚠ 之后 write 一律失败
+esp_err_t bsp_audio_wake(void);                             //   ↑ 必须 wake 才恢复
+esp_err_t bsp_audio_prepare_deep_sleep(void);               // 内部 disable I2S，不等 DMA 排空
 ```
 
 推荐参数：`bsp_audio_set_format(16000, 16, 1)`。
 **`bytes` = 采样数 × 2**（int16）。
+
+三条容易搞错的语义：
+
+| 说法 | 真相 |
+| --- | --- |
+| `write` 返回 = 播完了 | ❌ 只阻塞到 **I2S DMA 收下数据**，声音还在排队 |
+| `sleep()` 之后还能接着write | ❌ `sleep()` 会复位 codec 状态，之后 `set_format` / `write` **全部失败且静默** |
+| `prepare_deep_sleep()` 会播完队列 | ❌ 它内部 `i2s_channel_disable()` **直接丢弃**未播数据 |
+
+**关机/深睡前要等 DMA 排空**（见第 7.2 节）：
+
+```c
+bsp_audio_write(bye_pcm, bye_bytes);
+vTaskDelay(pdMS_TO_TICKS(bye_bytes / 32 + 120));   // 16k/16bit/mono：字节/32000 秒
+```
 
 ## A.4 BSP：电量（`bsp_battery.h`）
 

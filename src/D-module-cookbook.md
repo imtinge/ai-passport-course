@@ -343,15 +343,42 @@ int mv = bsp_button_read_mv();   // 松开 ≈3300；失败返回 -1
 ## D.7 音频
 
 > 完整手把手（四步发声、分块、worker 模板、录音、采样率坑、低功耗）见**第 21 章**。
-> 可编译示例：`snippets/05_audio_play.c`、`snippets/06_audio_worker.c`。
+> 可编译示例：`snippets/05_audio_play.c`、`snippets/06_audio_worker.c`、
+> `snippets/07_audio_drain.c`（排空等待 + 关机收尾 + sleep 单向门）。
 
 **出处**：`main/demo_audio.c`（模板）+ `main/demo_barbapapa.c`（分块播放）
 
 ### 铁律
 
-1. `bsp_audio_write/read` **阻塞到 DMA**，只能在 worker 任务里调用；
-2. 格式切换、sleep/wake 必须**串行化**，切换前先停 PCM；
-3. 分块写，块之间检查"要不要停"。
+1. `bsp_audio_write/read` **阻塞到 DMA**（不是到"喇叭响完"），只能在 worker 任务里调用；
+2. **要关 I2S / codec / 断电之前，先等 DMA 排空**（见下方"排空等待"）；
+3. 格式切换、sleep/wake 必须**串行化**，切换前先停 PCM；
+4. 分块写，块之间检查"要不要停"。
+
+### ⚠ 排空等待：`write` 返回 ≠ 声音已经响完
+
+`bsp_audio_write()` 的终点是 **I2S DMA 缓冲收下数据**，声音还在队列里排队。
+`bsp_audio_prepare_deep_sleep()` 内部的 `i2s_channel_disable()` **不会等队列排空**，
+剩下的数据直接丢弃——表现就是"道别语音一个字都没出来"。
+
+```c
+// 下一步要【关机/深睡/停 I2S】时，写完必须显式等待
+static void wait_audio_drained(size_t bytes_written)
+{
+    uint32_t ms = (uint32_t)(bytes_written / 32);   // 16k/16bit/mono：秒 = 字节/32000
+    vTaskDelay(pdMS_TO_TICKS(ms + 120));            // +120ms 覆盖 PA 斜坡与尾段
+}
+
+bsp_audio_write(bye_pcm, bye_bytes);
+wait_audio_drained(bye_bytes);            // ← 少了这步就没声
+bsp_audio_prepare_deep_sleep();
+```
+
+**只在"下一步要关音频/断电"时才需要等**；接着播下一段不用等（DMA 自己续上，
+等待反而造成断续）。
+
+> 可编译示例：`snippets/07_audio_drain.c`——含 `wait_audio_drained()`、
+> 播完道别语再进 deep sleep 的完整序列，以及 `sleep()` 单向门的正确/错误写法对照。
 
 ### 播放一段 Flash 里的 PCM
 
