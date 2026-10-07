@@ -15,7 +15,7 @@
 
 ## 16.1 工程结构（注意 firmware/ 子目录）
 
-```
+```text
 ESP32-PokemonGo/
 ├── firmware/                        ← ★ 真正的 ESP-IDF 工程在这
 │   ├── CMakeLists.txt  partitions.csv  sdkconfig.defaults
@@ -199,7 +199,7 @@ void app_main(void) {
 
 README 里有一组实测，是很好的参考基线：
 
-```
+```text
 固件 1.22 MB → factory 3MB 分区的 41%，余量 1.78 MB
 可用堆 231 KB（101+113+10+7）—— 比上游固件多 44 KB，因为砍了 BLE
 电池 优特利 520mAh（文档原写 500mAh）

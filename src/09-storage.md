@@ -7,7 +7,7 @@
 
 ## 9.1 先看清 8 MB Flash 的格局
 
-```
+```text
 0x0000   ┌──────────────────┐
          │ bootloader       │  约 28 KB
 0x8000   ├──────────────────┤
@@ -270,4 +270,9 @@ Flash 上越界读不会段错误，只会读到隔壁数据。
 - 解析二进制：长度从文件头读、不强转指针、每段都校验范围；
 - **越界读在 flash 上不崩，只会静默出错**。
 
-下一章讲联网。
+下一章讲联网：先[连上 Wi-Fi](10-network.md)，再解决
+[密码怎么进设备（配网）](10b-provisioning.md)，最后[拿到网怎么取数据](10c-network-data.md)。
+
+> **延伸阅读 · 官方经验条目**：
+> [视觉小说剧本包预算](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/vn-script-pack-budget-and-failure-modes.zh_CN.md)
+> ——5.06 MB 剧本压到 1.45 MB，**块大小由"最大连续块 7.7 KB"而非空闲堆决定**（第 11 章的核心论据就来自这里）

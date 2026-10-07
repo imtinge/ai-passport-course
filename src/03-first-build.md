@@ -167,22 +167,38 @@ sudo systemctl disable --now ModemManager   # 桌面机一般用不到
 
 ## 3.3 编译
 
+> **先说官方口径**：固件编译**优先** `./tools/validate.sh --firmware`，
+> `idf.py build` 和 `idf.py flash` 只是**增量开发命令，不是默认交付方式**。
+> 出处：`docs/development/engineering/build-and-test.zh_CN.md`。
+> 本书下面先用 `idf.py build` 讲通流程（因为它最能暴露环境问题），
+> 但你**养成习惯后默认应该跑门禁脚本**。
+
 ```bash
 git clone https://github.com/folotoy/ai-passport
 cd ai-passport
 idf.py set-target esp32c3     # 第一次必须做
 idf.py build
+
+# 官方推荐的默认动作（会另起干净的临时构建目录做完整校验）
+./tools/validate.sh --firmware
 ```
 
 `set-target` 会生成 `sdkconfig` 并设定目标芯片。
 **它只需要在第一次或切换过芯片目标时执行。**
+
+> **⚠️ 坑：`sdkconfig.defaults` 改了，已有 `sdkconfig` 不会自动同步。**
+> 你改了 `sdkconfig.defaults`（或拉了上游更新），直接 `idf.py build`
+> **不会**把新默认值灌进已经存在的 `sdkconfig`——配置项会静默保持旧值，
+> 于是"我明明开了这个选项啊"。`idf.py fullclean` 也做不到。
+> 正确做法：**先备份有意的本地设置，再跑一次 `idf.py set-target esp32c3`**。
+> 第 19 章的 `CONFIG_LV_TXT_ENC_UTF8=y` 就是这个坑的高频受害者。
 
 首次构建会联网拉取托管组件（LVGL、esp_lvgl_port、button、esp_codec_dev），
 慢是正常的。拉完之后会出现 `managed_components/` 目录——**不要改它**。
 
 编译成功的尾巴长这样：
 
-```
+```text
 Project build complete. To flash, run:
  idf.py -p (PORT) flash
 ```
@@ -191,7 +207,7 @@ Project build complete. To flash, run:
 
 Windows 上 `idf.py build` 有时会这样失败——注意**它甚至没进 CMake**：
 
-```
+```text
 CreateProcess failed: ...
 ```
 
@@ -251,6 +267,48 @@ tail -5 build/build.log
 同样的思路适用于烧录：`python -m esptool ... write_flash` 之后也要确认
 日志里有 `Hash of data verified` 和 `Hard resetting`，
 而不是只看命令"跑完了"。
+
+### 3.3.2 加速重复编译：ccache
+
+ESP-IDF 5.5.3 **默认不启用** ccache。改一行代码就等几分钟时，先把它开上：
+
+```bash
+ccache --version          # 先确认可用
+idf.py --ccache build     # 单次构建启用
+```
+
+或者在 Linux/macOS shell 里导出，让 `validate.sh` 一起受益：
+
+```bash
+export IDF_CCACHE_ENABLE=1
+idf.py build
+```
+
+**这是 `idf.py` 的命令行选项，不是 `sdkconfig` / menuconfig 配置**——
+别去 menuconfig 里找它。要在项目或 CI 里长期启用，就显式传 `--ccache`
+或在构建环境里设 `IDF_CCACHE_ENABLE=1`（别擅自改别人的 shell 启动文件）。
+
+两个细节：
+
+- 缓存目录**不总是** `~/.ccache`，取决于版本、`CCACHE_DIR` 等。
+  用 `ccache --show-config` / `ccache --show-stats` 看真实的 `cache_dir`；
+  确保它不在 `build/` 和临时验证目录里，否则一清理就白缓存了；
+- 清缓存**不是日常步骤**。真要清，用保留配置文件的 `ccache --clear`，
+  不要整个删目录——那会连累共用同一缓存的其他项目。
+
+### 3.3.3 Windows 上构建特别慢：先诊断，别急着加杀软排除项
+
+官方明确写了这条，**而且措辞很谨慎**：杀毒/终端安全软件的实时扫描**可能**拖慢构建，
+但**应先诊断瓶颈**。
+
+- Microsoft Defender 有官方的**性能分析器**，用它定位到底是不是它在扫；
+- **分析结果 ≠ 自动建议加排除项**。排除项会降低防护能力，是可选措施，
+  必须按适用安全策略取得用户/管理员批准，且只把例外限制在**已确认问题的最小范围**；
+- **不要例行把整个 ESP-IDF 安装目录、工具链目录或工程加进排除列表，
+  也不要关闭实时防护。**
+
+也就是说：先量，再改；别把"构建慢"默认归因于杀软。
+真正常见的慢因其实是首次拉托管组件、没有 ccache、以及 3.3.1 那种"命令根本没跑起来"。
 
 ## 3.4 烧录与监控
 
@@ -350,22 +408,36 @@ ESP32-C3 **几乎不可能真正变砖**——bootloader 在出厂 ROM 里，芯
 
 ## 3.6 常用命令速查
 
+**默认用这些**（官方口径，`validate.sh` 是完整门禁）：
+
 ```bash
-idf.py set-target esp32c3   # 设定芯片（首次）
-idf.py build                # 编译
+./tools/validate.sh             # 完整验证：静态 + 固件（需先激活 ESP-IDF 5.5.3）
+./tools/validate.sh --static    # 仓库一致性 + workflow + 文档链接 + 敏感信息 + host tests
+./tools/validate.sh --firmware  # 干净构建 + merge-bin + 偏移/分区布局校验
+idf.py --ccache build           # 增量开发（开 ccache）
+```
+
+**日常开发用这些**：
+
+```bash
+idf.py set-target esp32c3   # 设定芯片（首次 / 换过 defaults 后重新同步 sdkconfig）
+idf.py build                # 增量编译
 idf.py -p COM4 flash        # 烧录
 idf.py -p COM4 monitor      # 看日志
 idf.py -p COM4 flash monitor# 烧完接着看
 idf.py menuconfig           # 改配置（图形界面）
-idf.py fullclean            # 彻底清理（卡在奇怪的错误时用）
+idf.py fullclean            # 只清过期生成状态（勿用于清理源码改动）
 idf.py size                 # 看固件体积
 idf.py size-components      # 看每个组件占多少
 idf.py merge-bin -o out.bin # 合并镜像
 idf.py erase-flash          # 全片擦除（谨慎）
-
-./tools/validate.sh --static    # 静态门禁：代码风格 + 主机测试（无需设备）
-./tools/validate.sh --firmware  # 固件门禁：干净构建 + 合并镜像 + 分区容量校验
 ```
+
+> CI 与本地**用同一个脚本**。若 CI 和本地行为不同，应修脚本或环境，
+> 而不是维护两份命令。
+> 另：`dependencies.lock` 锁定了托管组件版本，改了 `idf_component.yml`
+> 必须用 IDF 5.5.3 重新生成锁文件并**随 manifest 一起提交**；
+> 普通构建不该产生未提交的锁文件差异。
 
 > `idf.py size` 值得经常跑。官方默认 `factory` 约 **7.9 MB**（不是 3 MB——
 > 那是 PokeWalk 为了塞 recovery 自己定的契约，见第 1.6 节）；
@@ -402,7 +474,7 @@ idf.py erase-flash          # 全片擦除（谨慎）
 
 交互约定（社区通用，你写自己的应用时也要遵守）：
 
-```
+```text
 上 / 下 短按   = 移动选中项
 确定 短按      = 进入
 确定 长按      = 返回

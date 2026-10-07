@@ -195,3 +195,8 @@ static void tick(lv_timer_t *timer) {
 
 和第 10 章、第 29 章的关系：第 10 章讲 BLE 原理；第 29 章是同样的"进页面起栈、出页面逆序回滚"思路，
 只是 BLE 多了一层 host 任务所有权。把这两章对照读，你就掌握了"官方怎么安全地开关一个协议栈"。
+
+> **延伸阅读 · 官方经验条目**：
+> [无 PSRAM 的双机 BLE 联机](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/two-device-ble-link.zh_CN.md)
+> ——联机实测堆开销、两个只在真机暴露的 NimBLE GATT 陷阱（缺 `access_cb`、订阅成功后的 `EDONE`），
+> 以及它为什么和整屏截屏缓冲冲突

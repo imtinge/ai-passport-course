@@ -24,9 +24,16 @@ python check_snippets.py 03 04      # 只编 03、04
   OK    05_audio_play.c
   OK    06_audio_worker.c
   OK    07_audio_drain.c
+  OK    08_wifi_sta_connect.c
+  OK    09_http_get_stream.c
 
-通过 7/7
+通过 9/9
 ```
+
+> 08/09 用到 `main` 默认不依赖的组件（Wi-Fi 已在依赖里；`esp_http_client` 不在），
+> 所以 `check_snippets.py` 允许**按文件指定基准编译命令**
+> （见脚本里的 `BASE_SRC_OVERRIDES`）：09 用 `esp_http_client` 组件自己的那条命令，
+> 否则 `-I` 里没有 `esp_http_client.h`。
 
 ## 为什么值得这么做
 
@@ -60,3 +67,5 @@ python check_snippets.py 03 04      # 只编 03、04
 | `05_audio_play.c` | 四步发声、分块播放、录音 | **21**、D.7 |
 | `06_audio_worker.c` | worker + 任务通知 + 停止握手 | **21**、D.14 |
 | `07_audio_drain.c` | **`write` 返回 ≠ 声音响完**：按字节算时长等 DMA 排空，再关 I2S/断电；附 `sleep()` 单向门的正确用法 | **7.2 / 7.8**、**21.8**、D.7 |
+| `08_wifi_sta_connect.c` | STA 联网模块：checked 启动链、reason 打印、**指数退避 + 抖动 + 上限**重连、逆序拆除 | **10.1–10.5**、D.10 |
+| `09_http_get_stream.c` | 流式取数：事件回调 + 硬上限 + `cleanup()` 必调；附大文件"边收边写"下载 | **10c.1–10c.3**、D.10 |

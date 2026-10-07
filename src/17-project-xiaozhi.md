@@ -28,7 +28,7 @@
 `bsp_*` 这种"扁平函数"的写法在多板型下会失控，
 于是它用了面向对象的做法：
 
-```
+```text
 main/boards/
 ├── common/   board.cc/.h  wifi_board.cc/.h  backlight.cc/.h  button.cc/.h
 └── folotoy/ai-passport/
@@ -192,7 +192,7 @@ assets,   data, spiffs,  0x800000,  4000K
 
 素材读取走 mmap（`main/assets.cc`）：
 
-```
+```c
 esp_partition_find_first → esp_partition_read(header)
   → spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA)
   → esp_partition_mmap(...) → 校验 → 按 mmap_assets_table 索引取数据
@@ -205,7 +205,7 @@ C3 只有 128 个 MMU 页）。
 
 > 源码：`sdkconfig.defaults.esp32c3`
 
-```
+```text
 CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=3
 CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=6
 CONFIG_ESP_WIFI_RX_BA_WIN=3
@@ -248,6 +248,11 @@ CONFIG_LWIP_IPV6=n
 | OTA 分区布局 | `partitions/v2/16m_c3.csv` |
 | mmap 素材 + MMU 页检查 | `main/assets.cc` |
 | 多板型抽象（如果做跨设备） | `main/boards/` |
+
+> 联网这条线（长连接协议、音频流的内存预算）本书单独讲了：
+> [10b 配网](10b-provisioning.md) · [10c.4 长连接](10c-network-data.md#10c4-长连接mqtt--websocket--裸-socket) ·
+> [10c.5 流式音频](10c-network-data.md#10c5-最苛刻的场景流式音频)。
+> 小智走的是"WebSocket/MQTT 信令 + UDP/Opus 音频"那一套，原理在那两节。
 
 ## 17.10 小结
 

@@ -12,6 +12,8 @@ no-section-label = false
 # mdBook 的"查看源码/编辑/历史"链接指向本书仓库（GitHub Pages 发布源）。
 # 硬件基线源码仍见第 03 章与附录 B（folotoy/ai-passport）。
 git-repository-url = "https://github.com/imtinge/ai-passport-course"
+# 每页右上角的"编辑本页"直接指向 GitHub 上的源文件
+edit-url-template = "https://github.com/imtinge/ai-passport-course/edit/main/{path}"
 
 [output.html.print]
 enable = true

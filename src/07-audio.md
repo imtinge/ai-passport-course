@@ -45,7 +45,7 @@ bsp_audio_write(pcm_buffer, samples * 2);
 
 调用链是这样的（`esp_codec_dev` → 驱动 → HAL）：
 
-```
+```c
 bsp_audio_write(pcm, bytes)
   └─ esp_codec_dev_write()
        └─ audio_codec_data_i2s.c: _i2s_data_write()
@@ -58,7 +58,7 @@ bsp_audio_write(pcm, bytes)
 
 为什么会咬人？因为**DMA 不会因为你停 I2S 就把剩下的播完**：
 
-```
+```text
 工作流程：  write(全部数据) ──► DMA 边排队边播放 ──► 真正出声
                               ▲
                               └── 如果你在这里 i2s_channel_disable()
@@ -320,3 +320,7 @@ bsp_i2c_prepare_deep_sleep();           // 4. 最后释放共享 I2C
 下一章讲电量、熄屏和深睡的完整流程。
 
 > 官方把"1 kHz 方波 / 录 3 秒回放"做成并发模板（worker-stop 握手）的逐行源码，见第 27 章（Audio 示例）。
+
+> **延伸阅读 · 官方经验条目**：
+> [音频压缩方式的权衡](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/audio-compression-trade-offs.zh_CN.md)（IMA-ADPCM / Opus / MP3 实测容量与解码成本） ·
+> [网络音频流与内存预算](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/phoenixzhc/network-audio-streaming-and-memory.zh_CN.md)（第 10c.5 节的官方版）

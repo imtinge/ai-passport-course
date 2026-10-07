@@ -94,7 +94,25 @@
 | **GAP** | BLE 广播、连接、设备名相关协议层 |
 | **peripheral / broadcaster** | 本板配置的 BLE 角色；**没有 central / observer，没有经典蓝牙** |
 | **STA / AP** | Wi-Fi 站点模式（连路由器）/ 接入点模式（设备当热点，常用于配网） |
-| **SNTP** | 网络授时；拿到 IP 之后才能用 |
+| **APSTA** | 同时开 AP 和 STA（配网时收密码 + 试连路由器）；比 AP-only 更吃资源 |
+| **RSSI** | 信号强度（dBm，负数）；> -60 很好，-70 可用，< -80 别指望稳定 HTTPS |
+| **DHCP** | 路由器给设备分配 IP 的服务；`IP_EVENT_STA_GOT_IP` 就是它完成的标志 |
+| **2.4 GHz** | ESP32-C3 **只支持**这个频段；手机热点开 5 GHz 时设备搜不到（不是 bug） |
+| **TLS / HTTPS** | 加密传输层 / 其上的 HTTP；握手是内存峰值，且**依赖系统时间** |
+| **证书 / CA** | 证明"你连的服务器是真的"的凭据；可单证书嵌入或用证书包 |
+| **证书包 crt bundle** | 内置一批公共 CA，能访问多数公网 HTTPS，代价是 Flash/RAM |
+| **SNTP** | 网络授时；拿到 IP 之后才能用。**没校时先发 HTTPS 必然失败**（第 10c.2 节） |
+| **配网 provisioning** | 把 Wi-Fi 密码交给设备的过程（第 10b 章） |
+| **BLUFI** | 乐鑫的 BLE 配网协议；官方分支 `demo/blufi-provisioning`，配套小程序"蓝牙配网-FoloToy AI PASSPORT" |
+| **SoftAP 配网** | 设备开热点 → 手机浏览器填表单；最灵活也最吃内存 |
+| **captive portal** | 连上热点后自动弹配置页；靠通配 DNS + HTTP 重定向实现，兼容性要实测 |
+| **SmartConfig** | 手机把密码编进 UDP 广播、设备抓包解出；依赖第三方 App，新项目很少用 |
+| **PoP** | Proof of Possession，配网时证明"我有权限配这台设备"的口令（SECURITY_1） |
+| **content-length = -1** | 分块传输（chunked）：响应没有声明长度，必须边收边处理 |
+| **MQTT** | 轻量级发布/订阅消息协议；IDF 自带 `mqtt` 组件，适合长连接推送 |
+| **WebSocket** | 双向长连接；v5.5.3 基础组件里没有，需加 `espressif/esp_websocket_client` |
+| **keep-alive / 心跳** | 定期发包维持长连接，否则路由器会静默掉空闲连接 |
+| **OTA** | 见"内存与存储"；**默认分区表没有 OTA 槽**，要自己改 |
 
 ## 工程与验证
 
@@ -119,4 +137,7 @@ PSRAM   外接 RAM          PCM     裸音频采样
 STA     Wi-Fi 站点        AP      接入点
 WDT     看门狗            OTA     空中升级
 bpp     每像素位数        cf      LVGL 图片的颜色格式字段
+RSSI    信号强度          DHCP    自动分配 IP
+SNTP    网络授时          TLS     传输层加密
+BLUFI   BLE 配网协议      PoP     配网口令
 ```

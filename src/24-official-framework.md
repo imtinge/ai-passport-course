@@ -11,6 +11,20 @@
 
 > 这一章的所有行号都来自官方基线 `main/` 下的真实文件；编译用本书 `snippets/` 同一套官方参数。
 
+> ### ⚠ 先确认你手上的是哪一份 `main/`
+>
+> 本书第 24–31 章讲的是**官方基线**（`folotoy/ai-passport`）的 7 个硬件测试 demo。
+> 如果你本地工程是某个**二次开发 fork**（例如作者本机的 `D:\trae_projects\AIP\ai-passport`，
+> 是巴巴爸爸 fork，`main/` 里只有 Bluey / Barbapapa / PawPatrol / MengKe / Volume
+> 五个玩法页），那么：
+>
+> - `components/bsp` **是一致的**——板级事实（引脚、时钟、缓冲）照样对得上；
+> - `main/` **不一样**——你不会在菜单里看到 `demo_display.c` 这类测试页，
+>   但它们的文件可能仍然存在，只是**没有注册进菜单**。
+>
+> 所以照着章节去 `main/` 里找文件时，请认准 `DEMOS[]` 注册表和 `main.c` 的派发逻辑；
+> 找不到的，先 `git branch -r --list 'origin/demo/*'` 看官方有没有对应分支。
+
 ## 24.1 `demo_entry_t`：每个 demo 只是一笔注册
 
 接口定义在 `main/demo.h:7-14`，全文只有 14 行，是所有 demo 的"宪法"：

@@ -3,6 +3,29 @@
 嵌入式调试和 PC 调试最大的区别是：**没有断点，没有 debugger**（除非接 JTAG）。
 你的主要工具是日志、经验和对 panic 信息的解读能力。
 
+## 22.0 先按现象定位（排障索引）
+
+不知道从哪查起时，先用这张表按**现象**跳到对应章节；章节内再按子系统细查。
+
+| 你看到的现象 | 优先看 |
+| --- | --- |
+| 设备一直重启 / 反复复位 | 12.7 看门狗（任务长时间不让出 CPU）、12.8 栈溢出 |
+| 串口打出 `Guru Meditation` / panic | 22.2 读懂 panic、A.10 内存数字 |
+| 中文显示成方框 / 空白 | 5.8 为什么缺字、19.5–19.6 字形覆盖与占位符 |
+| 屏幕撕裂、局部花屏、UI 卡顿 | 5.3 一帧画面怎么上屏、5.4 LVGL 锁 |
+| 开机"啪"一声爆音 / 播放杂音 | 7.6 开机爆音、7.4 真实播放循环 |
+| 连不上 Wi-Fi / 连上就掉 | 10.2 全部事件、10.3 重连退避、10.6 连接失败降级 |
+| HTTPS 握手失败、证书报错 | 10c.2 证书 / 时间 / 内存（TLS 依赖系统时间） |
+| 待机电流偏高、睡不下去 | 8.4 深睡契约（C 版）、B.7.4 深睡（MicroPython 版） |
+| 内存越跑越少 / 慢慢变小 | 11.2 五条纪律、12.5.1 停止握手（别硬删任务） |
+| 烧录失败 / 构建跑不起来 | 3.3.1 Windows 实战、3.5 合并镜像与救砖 |
+| 按键不灵 / 误触 / 长按无效 | 6.3 回调里不许干活、6.6 两个真实坑 |
+| 音频播到一半卡死 / 无法打断 | 7.3 播放必须在自己任务里、21.4 分块送数据 |
+| 改了字体/文案/主题后缺字 | 19.6 不要关掉占位符、19.5 验证覆盖 |
+
+> 这张表是按"新手最常踩"排的，不是全集。子系统级的完整排障表在各章末尾
+> （如 10.11、10b.9、10c.8、19.7、20.9），那里更细。
+
 ## 22.1 第一工具：日志
 
 ```bash
@@ -32,7 +55,7 @@ ESP_LOGI(TAG, "stack left=%u", uxTaskGetStackHighWaterMark(NULL));
 
 设备崩溃时串口会输出一大段。关键是这几行：
 
-```
+```text
 Guru Meditation Error: Core  0 panic'ed (LoadProhibited). Exception was unhandled.
 
 Core  0 register dump:
@@ -95,6 +118,14 @@ idf.py monitor   # 新版本会自动解析地址成 文件:行号
 | **关机/深睡前的播报听不到** | DMA 未排空就被 `i2s_channel_disable()` 掐断 | 写完等 `bytes/32 + 120` ms（第 7.2 节） |
 | **串口满屏 `ClearCommError`，读不到日志** | 设备在 **deep sleep**，USB-Serial-JTAG 随 SoC 断电 | 先上电唤醒再抓；端口在 ≠ SoC 在跑（第 22.8 节） |
 | **设备正常跑但日志一个字节都没有** | 控制台被配成 UART0（TX=GPIO21，与背光冲突） | 保持走 USB-Serial-JTAG（第 22.8 节） |
+| **改了旋转/镜像却没生效** | `bsp_display_lvgl.c` 的 `rotation` 会**在注册显示时重新下发 MADCTL**，覆盖底层 mirror | 改 `lvgl_port_display_cfg_t.rotation`，别只改 `esp_lcd_panel_mirror()`（第 5.1 节） |
+| **颜色怪/颠倒且越改越乱** | `swap_bytes`、RGB/BGR、反色三个变量同时动 | **一次只改一个变量**（第 5.1 节） |
+| **两个 I2C 芯片同时失联** | 在 I2C0 上创建了第二条临时总线 | 只走 `bsp_i2c_bus()` + `i2c_master_probe()`（第 4.4 节） |
+| **只找不到 ES8311（CW2017 正常）** | 控制接口要 **8 bit 地址 `0x18 << 1`** | 别把 7 bit 地址直接传给 codec-dev（第 4.4 节） |
+| **录音全是 0** | `no_dac_ref` 被改成 false（读入通道变 DAC reference） | 保持 `no_dac_ref=true`；再查 DIN=GPIO4 与麦克风增益 30 dB（第 7 章） |
+| **电量一直显示 `--`** | `0x63` 没应答 / SOC 读到 >100 / profile 未就绪 | 按第 8.1 节的表逐项查；首帧别虚构百分比 |
+| **加大 UI 之后 I2S 报 NO_MEM** | 双缓冲/LVGL 池与 I2S DMA 抢内部 RAM | 三者一起算（第 11 章；I2S 是 6×240 frame） |
+| **加大字体/图片后开机白屏** | LVGL 24 KB 池耗尽 | 池耗尽表现为白屏而不是报错；别盲目调大池（第 5、11 章） |
 
 ## 22.4 15 条运行时红线
 
@@ -166,7 +197,7 @@ PokeWalk 项目甚至专门做了**串口注入按键**来自动走一遍所有�
 
 社区项目普遍有 `tests/` 目录：
 
-```
+```text
 tests/
 ├── test_bsp_button.c
 ├── test_bsp_display_rounding.c
@@ -330,7 +361,7 @@ cc -std=c11 -Wall -Wextra -Werror -Itests/stubs -I. \
 
 这是社区约定的汇报格式，目的是**不把"编译通过"说成"硬件通过"**：
 
-```
+```text
 Build       : idf.py build 通过 / 镜像 xxxx KB
 Host tests  : tests/ 下 N 个主机测试通过
 Device tests: 真机验收矩阵 N 项中 M 项通过
@@ -373,7 +404,7 @@ ESP_LOGI(TAG, "min ever: %u", esp_get_minimum_free_heap_size());
 
 设备出问题时，按这个顺序排除：
 
-```
+```text
 1. 日志有没有输出？        → 没有：烧录/串口/供电问题
 2. app_main 跑到了哪一行？  → 加日志定位
 3. panic 是什么类型？       → 对照 22.2 的表
@@ -392,7 +423,7 @@ ESP_LOGI(TAG, "min ever: %u", esp_get_minimum_free_heap_size());
 
 用 Python（pyserial）自己抓串口时，满屏刷这个错：
 
-```
+```text
 串口异常: ClearCommError failed (PermissionError(13, '设备不识别此命令。', None, 22))
 ```
 
@@ -404,7 +435,7 @@ ESP_LOGI(TAG, "min ever: %u", esp_get_minimum_free_heap_size());
 **USB-Serial-JTAG 外设**。它在 SoC 内部，**deep sleep 时随 SoC 一起断电**。
 USB 描述符可能还挂在总线上（所以 COM 口"在"），但设备已无法响应任何读命令。
 
-```
+```text
 设备运行中   → USB-Serial-JTAG 有电 → monitor 正常
 设备 deep sleep → SoC 断电           → COM 口在，但读命令全部失败
 设备刚被硬复位 → USB 重新枚举中      → 端口短暂不可用
@@ -457,7 +488,7 @@ while time.time() < deadline:
 如果设备**明明在运行**（屏幕亮着、有声音），但 monitor 依然一个字节都没有，
 那要查的是**控制台被路由到了哪里**。`sdkconfig` 里这几项决定日志出口：
 
-```
+```text
 CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y     ← 想要走原生 USB
 CONFIG_ESP_CONSOLE_UART=y                ← 想要走 UART0 引脚（TX 在 GPIO21！）
 CONFIG_ESP_CONSOLE_UART_NUM=0
@@ -470,7 +501,7 @@ UART0 的默认 TX 是 **GPIO21，和背光是同一个引脚**——把日志�
 
 ### 抓日志的可靠顺序
 
-```
+```text
 1. 确认设备在运行（屏幕亮 / 有声音 / 按 RST 有反应）
    └─ 没反应 → 先上电唤醒，deep sleep 状态下串口是不存在的
 2. 确认没有别的程序占着端口（idf.py monitor / 另一个串口助手 / WSL 转发）
@@ -493,3 +524,8 @@ UART0 的默认 TX 是 **GPIO21，和背光是同一个引脚**——把日志�
 - 22.3 那张症状对照表值得打印贴墙；
 - 定位靠二分注释 / 最小复现 / **搬到 PC 上跑**；
 - **编译通过 ≠ 硬件验证**。
+
+> **延伸阅读 · 官方经验条目**（这两篇都是"真机才暴露"的排障实录）：
+> [串口截屏协议](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/y2lin/serial-screenshot-protocol.zh_CN.md) ·
+> [音量计 UI 平滑与杂色块](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/y2lin/meter-ui-smoothing-and-layout.zh_CN.md)
+> （屏上杂色块的根因清单、LVGL 池耗尽导致开机白屏）

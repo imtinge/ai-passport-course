@@ -80,7 +80,7 @@ bsp_audio_write(pcm, bytes);            // 4. 送数据（阻塞！）
 
 正确的结构是**"下单 / 干活"分离**：
 
-```
+```c
 按键回调（快）  ──xTaskNotify(命令)──▶  音频 worker 任务（慢，阻塞也无所谓）
                                             │
                                         bsp_audio_write()
@@ -292,7 +292,7 @@ while (got < total && !s_cancel) {
 `esp_codec_dev_open()` 在 codec **已经打开**时会直接返回 `ESP_OK`，
 **并且不重新配置采样率**。于是：
 
-```
+```text
 16 kHz 播完 → 调 open() 想切到 8 kHz
             → open 返回 OK，但时钟还是 16 kHz
             → 8 kHz 的数据以 16 kHz 送出

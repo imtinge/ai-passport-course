@@ -42,27 +42,36 @@ else:
 CC_JSON = REPO / "build" / "compile_commands.json"
 MAIN_SRC = "main/main.c"
 
+# 默认基准：main/main.c 的编译命令（含 main 依赖到的全部 -I/-D）。
+# 少数 snippet 用到 main 默认不依赖的组件（如 esp_http_client），
+# 这时改用该组件自己的源码条目——只有它的 -I 里才有对应头文件路径。
+BASE_SRC_OVERRIDES = {
+    "09_http_get_stream.c": "esp_http_client/esp_http_client.c",
+}
 
-def load_base_cmd():
+
+def load_base_cmd(src_suffix=MAIN_SRC):
     if not CC_JSON.exists():
         sys.exit(f"找不到 {CC_JSON}\n先把官方工程完整构建一次：idf.py build")
     cc = json.load(io.open(CC_JSON, encoding="utf-8"))
     for e in cc:
         f = str(e["file"]).replace("\\", "/")
-        if f.endswith("/" + MAIN_SRC):
+        if f.endswith("/" + src_suffix):
             return str(REPO / "build"), e["command"]
-    sys.exit(f"compile_commands.json 里没有 {MAIN_SRC}")
+    sys.exit(f"compile_commands.json 里没有 {src_suffix}")
 
 
-def main():
-    build_dir, base = load_base_cmd()
-    # 去掉原命令末尾的 "-o <obj> -c <src>"
+def compile_flags(src_suffix=MAIN_SRC):
+    """取出某个基准源文件的编译参数（去掉末尾的 -o <obj> -c <src>）。"""
+    build_dir, base = load_base_cmd(src_suffix)
     idx = base.rfind(" -o ")
     flags = shlex.split(base[:idx], posix=False)
     # compile_commands.json 里的 -D 带 shell 转义的引号（\"x\"），
     # posix=False 不会消掉反斜杠，清一下否则 gcc 报 missing terminating "
-    flags = [a.replace('\\"', '"') for a in flags]
+    return build_dir, [a.replace('\\"', '"') for a in flags]
 
+
+def main():
     only = sys.argv[1:]
     files = sorted(HERE.glob("*.c"))
     if only:
@@ -74,7 +83,16 @@ def main():
     tmp = Path(tempfile.gettempdir()) / "aip_snippets"
     tmp.mkdir(parents=True, exist_ok=True)
 
+    # 按需分组：用到额外组件的 snippet 用各自的基准命令，其余共用 main 的
+    main_build, main_flags = compile_flags()
+    flag_cache = {MAIN_SRC: (main_build, main_flags)}
+
     for src in files:
+        suffix = BASE_SRC_OVERRIDES.get(src.name, MAIN_SRC)
+        if suffix not in flag_cache:
+            flag_cache[suffix] = compile_flags(suffix)
+        build_dir, flags = flag_cache[suffix]
+
         obj = tmp / (src.stem + ".o")
         # 不走 shell：整条命令 13k 字符会撞上 cmd.exe 8191 的限制，
         # 直接给 CreateProcess 传 argv（上限 32767）就没问题。

@@ -19,7 +19,7 @@
 
 ## 15.1 分支结构
 
-```
+```text
 origin/HEAD -> origin/main
 origin/feature/asunabi-galgame
 origin/feature/atri-reader
@@ -147,7 +147,7 @@ ESP_LOGI(TAG, "播放结束: %s", f->name);
 
 四个动作、两个产物：
 
-```
+```text
 原始音频 → 重采样(8kHz) → 压缩(IMA-ADPCM 4bit) → voicefs.img（烧到分区）
                                                → voice_index.h（编进固件）
 ```
@@ -213,3 +213,7 @@ README 里全是实测数据，读起来像一本实验笔记：
 - 素材走"PC 预处理 + 独立分区 + 索引头文件"；
 - **最大连续块 < 8 KB** 是这个项目所有设计的起点；
 - 串口截图和 BLE 在 C3 上无法共存——**功能之间要做取舍**。
+
+> **延伸阅读 · 官方经验条目**：
+> [音频压缩方式的权衡](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/audio-compression-trade-offs.zh_CN.md)
+> ——IMA-ADPCM / Opus / MP3 在有限 Flash 上的实测容量与解码器成本，正是本项目选编解码时的依据

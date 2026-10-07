@@ -122,6 +122,10 @@ if (err == ESP_OK) {
 
 > 深睡唤醒是**冷重启**：代码从 `app_main` 重新跑，`enter` 靠 `RTC_DATA_ATTR` 的魔数认出"我是被定时器唤醒的"。
 
+**这五步每一步内部的校验契约**（寄存器回读重试、引脚终端状态、`esp_codec_dev_close()` 为什么不够、
+light sleep 为什么**不能**调这些接口、哪些电流软件修不掉）见 **第 8.4 节**——那里按官方
+`deep-sleep-peripheral-power-off` 参考条目逐项展开，本章只讲 demo 层面的调用顺序。
+
 ## 31.6 LIGHT SLEEP：可恢复，必须对称 resume
 
 浅睡不丢 RAM、能恢复，所以**只要试过 suspend 就必须 resume**，否则醒来外设是关的：

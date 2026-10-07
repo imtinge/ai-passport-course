@@ -16,7 +16,7 @@
 
 ## 14.1 工程结构
 
-```
+```c
 pax-zhang__ai-passport/
 ├── components/bsp/          ← 扩展版 BSP（9 个头文件）
 │   ├── include/ bsp_audio.h bsp_battery.h bsp_ble.h bsp_button.h

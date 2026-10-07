@@ -3,6 +3,10 @@
 本章的目标是：**用你已经会的 C 知识，把 ESP-IDF 里陌生的部分全部类比掉**。
 读完之后你应该能看懂任何一个社区仓库的工程结构，不需要先去读官方文档。
 
+> **版本提醒**：本书所有示例锁定 **ESP-IDF 5.5.3**（组件契约 `>=5.5.3,<5.6.0`）。
+> 官方另有 6.1 线（AI 语音对话走这条，且已声明 5.x 不再支持），两条线**不兼容**。
+> 你现在该选哪条、5.5→6.1 差在哪，统一定论在第 23.4 节，动手前先扫一眼。
+
 ## 2.1 ESP-IDF 是什么
 
 一句话：**一套 CMake 构建系统 + 一个 FreeRTOS 内核 + 一堆芯片外设驱动库。**
@@ -20,7 +24,7 @@
 
 以官方基线为例（去掉文档目录）：
 
-```
+```text
 ai-passport/
 ├── CMakeLists.txt          # 项目根：三行，几乎不用改
 ├── sdkconfig.defaults      # 默认配置（相当于 .config 的默认值）
@@ -255,7 +259,7 @@ xTaskCreate(my_task,      // 函数
 ESP-IDF 有几百个编译期配置（`CONFIG_XXX`），通过 `menuconfig` 改，
 结果存在 `sdkconfig` 里。项目用 `sdkconfig.defaults` 提交默认值：
 
-```
+```text
 CONFIG_COMPILER_OPTIMIZATION_SIZE=y
 CONFIG_LV_MEM_SIZE_KILOBYTES=24
 CONFIG_FREERTOS_IDLE_TASK_STACKSIZE=768
@@ -319,7 +323,7 @@ size_t len = _binary_gen1_bin_end - _binary_gen1_bin_start;
 
 ## 2.12 小结：你只需要记住的新东西
 
-```
+```c
 工程结构      CMakeLists.txt(根) + main/CMakeLists.txt(SRCS/REQUIRES) + components/
 入口          void app_main(void)，通常初始化完就返回
 错误          esp_err_t / ESP_OK / ESP_ERROR_CHECK / esp_err_to_name

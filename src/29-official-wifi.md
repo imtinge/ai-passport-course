@@ -194,5 +194,10 @@ void demo_wifi_key(bsp_btn_t btn, bsp_btn_ev_t ev) {
 - **事件回调只改 `volatile` 状态，UI 交给 `tick` 单点渲染**；
 - **`stop` 逆序回滚**整套栈。
 
-和第 10 章的关系：第 10 章讲 Wi-Fi / HTTP / BLE 的原理与坑，本章是官方把"STA 扫描"做成健壮实例。
-想看"连接 + 联网取数据"，第 10 章有通用骨架；但官方 demo 刻意止步于扫描，正是为了避免在示例里处理凭证。
+和第 10 章的关系：第 10 章讲 Wi-Fi 全生命周期的原理与坑，本章是官方把"STA 扫描"做成健壮实例。
+
+- 想看"连接 + 重连退避"：第 10.1–10.3 节，可编译版本在 `snippets/08_wifi_sta_connect.c`；
+- 想看"密码怎么进设备"（官方 demo 刻意不做）：[10b 章 配网](10b-provisioning.md)；
+- 想看"拿到网怎么取数据"：[10c 章](10c-network-data.md)，可编译版本在 `snippets/09_http_get_stream.c`。
+
+官方 demo 止步于扫描，正是为了避免在示例里处理凭证——这一条本身也值得抄。

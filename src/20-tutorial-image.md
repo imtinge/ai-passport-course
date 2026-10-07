@@ -24,7 +24,7 @@
 
 所以社区的标准做法是：**把解码这件事挪到 PC 上，只做一次**。
 
-```
+```text
 PC（一次性）                     设备（每次运行）
   原图 PNG/GIF/JPG
     → 缩放到 ≤240×240
@@ -41,7 +41,7 @@ PC（一次性）                     设备（每次运行）
 
 ST7789 这块屏是 RGB565：**红 5 位、绿 6 位、蓝 5 位，一个像素 2 字节**。
 
-```
+```text
  15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
   R  R  R  R  R  G  G  G  G  G  G  B  B  B  B  B
 ```
@@ -141,7 +141,7 @@ python tools/img2rgb565.py gif/anim_02barbapapa.gif main/assets/barbapapa/bbp_im
 **一条硬规矩：转换脚本要打印"原始尺寸 → 输出尺寸 → 字节数"。**
 第 18 章的 `fetch_assets.py` 就是这么做的：
 
-```
+```text
 idx 角色名        原始尺寸  -> 输出     GIF
  0. 巴巴爸爸     400x400  -> 240x240  115200B  anim_02barbapapa.gif
 ```
@@ -177,7 +177,7 @@ idf_component_register(
 
 链接器会为**每个文件**生成一对符号，规则是：
 
-```
+```text
 `_binary_<文件名（非字母数字替换为下划线）>_start`
 `_binary_<文件名（非字母数字替换为下划线）>_end`
 ```
@@ -295,7 +295,7 @@ void show_image(lv_obj_t *parent, uint8_t idx)
 这不是你的图片问题，是 BSP 干的：`bsp_display_lvgl.c` 在 `FLUSH_START` 事件里
 按 `BSP_LVGL_SCREEN_RADIUS`（= **30**）逐行做遮罩，圆角外的像素填纯黑。
 
-```
+```text
 ┌──────────────────┐
 ╭──────────────────╮   ← 半径 30 的圆角，角上是黑的
 │                  │

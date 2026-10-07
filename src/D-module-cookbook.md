@@ -503,7 +503,8 @@ int32_t load_count(int32_t defv) {
 
 ## D.10 Wi-Fi
 
-**出处**：`main/demo_wifi.c` + `main/demo_radio.c`
+**出处**：`main/demo_wifi.c` + `main/demo_radio.c`；配网与取数见 `demo/blufi-provisioning` 分支与 IDF 组件
+（对应章节：[10](10-network.md) / [10b](10b-provisioning.md) / [10c](10c-network-data.md)）
 
 ### 启动链（顺序不能乱）
 
@@ -549,6 +550,116 @@ esp_wifi_connect();
 
 > **拿到 `IP_EVENT_STA_GOT_IP` 才算真正联网**，不是 `esp_wifi_connect()` 返回就算。
 > 断线重连要带退避与上限，别无限狂连。
+
+### 凭据与重连退避
+
+```c
+// 凭据存哪：RAM（demo 选择，零副作用）/ FLASH（IDF 自动存，上电自动连）/ 自管 NVS
+esp_wifi_set_storage(WIFI_STORAGE_RAM);   // 或 WIFI_STORAGE_FLASH
+
+// 重连：指数退避 + 抖动 + 上限（★ 别在事件回调里 while/delay）
+static void schedule_reconnect(int retry)
+{
+    int backoff = 1000 << (retry < 5 ? retry : 5);          // 1→2→4→8→16→32s
+    if (backoff > 30000) backoff = 30000;
+    backoff += esp_random() % 250;                          // 抖动，避免齐刷刷
+    // 用 esp_timer / 软件定时器 / 队列通知自己的 worker，不要在回调里阻塞
+    xTimerChangePeriod(s_timer, pdMS_TO_TICKS(backoff), 0);
+}
+
+// 断开原因：打印 reason，15/202=密码错、201=扫不到（想想 5 GHz）、200=信号弱
+wifi_event_sta_disconnected_t *d = (wifi_event_sta_disconnected_t *)data;
+ESP_LOGW(TAG, "ssid=%s rssi=%d reason=%d", (char *)d->ssid, d->rssi, d->reason);
+```
+
+> **确定性失败（密码错 2xx）不要无限重试**——回到配网界面让人重输。
+
+### 配网骨架（`wifi_provisioning`，BLE / BLUFI）
+
+**出处**：官方 `demo/blufi-provisioning` 分支 + IDF 组件 `wifi_provisioning`
+（详见第 10b 章）
+
+```cmake
+# main/CMakeLists.txt
+idf_component_register(SRCS "main.c" INCLUDE_DIRS "."
+                       PRIV_REQUIRES wifi_provisioning nvs_flash ...)
+```
+
+```c
+#include "wifi_provisioning/manager.h"
+#include "wifi_provisioning/scheme_ble.h"
+
+wifi_prov_mgr_config_t cfg = {
+    .scheme = wifi_prov_scheme_ble,
+    .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM, // 配完释放 BT
+};
+ESP_ERROR_CHECK(wifi_prov_mgr_init(cfg));
+esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, &prov_event, NULL);
+
+bool provisioned = false;
+ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
+if (!provisioned) {
+    const char *pop = "abcd1234";        // WIFI_PROV_SECURITY_1 的 PoP
+    ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(
+        WIFI_PROV_SECURITY_1, pop, "BLUFI_FoloPassport", NULL));
+}
+// 事件：WIFI_PROV_START → CRED_RECV → CRED_SUCCESS / CRED_FAIL(reason) → END
+// 清凭据：wifi_prov_mgr_reset_provisioning();
+```
+
+> **STA 拿到 IP 才算配网成功**；"BLE 连上"不算。
+> **旧凭据要在新凭据验证成功后才覆盖**；密码绝不进日志、绝不提交 Git。
+
+### HTTP 流式取数（推荐写法）
+
+**出处**：IDF `esp_http_client`（第 10c 章）
+
+```c
+#define MAX_BODY 8192
+typedef struct { char *buf; size_t cap, len; bool overflow; } body_t;
+
+static esp_err_t on_http_event(esp_http_client_event_t *evt)
+{
+    body_t *b = (body_t *)evt->user_data;
+    switch (evt->event_id) {
+    case HTTP_EVENT_ON_DATA:
+        if (evt->data_len == 0) break;                       // 空事件跳过
+        if (b->len + evt->data_len > b->cap) { b->overflow = true; break; }
+        memcpy(b->buf + b->len, evt->data, evt->data_len);   // evt->data 回调后失效
+        b->len += evt->data_len;
+        break;
+    case HTTP_EVENT_ERROR:        ESP_LOGE(TAG, "DNS/TCP/TLS/超时");  break;
+    default: break;
+    }
+    return ESP_OK;
+}
+
+esp_http_client_config_t cfg = {
+    .url = url, .method = HTTP_METHOD_GET,
+    .timeout_ms = 8000,                 // ★ 必设
+    .event_handler = on_http_event, .user_data = &b,
+    .buffer_size = 1024,                // 内部单次接收缓冲，别设大
+};
+esp_http_client_handle_t c = esp_http_client_init(&cfg);
+esp_err_t err = esp_http_client_perform(c);
+int status = esp_http_client_get_status_code(c);
+int64_t len = esp_http_client_get_content_length(c);   // 可能为 -1（chunked）
+esp_http_client_cleanup(c);             // ★ 成败都要调，否则 socket 泄漏
+```
+
+**HTTPS 三件事**：证书（`.cert_pem` + `EMBED_TXTFILES`，或 `.crt_bundle_attach`）、
+**时间（先 SNTP 再请求，否则证书"尚未生效"）**、内存（开 `CONFIG_MBEDTLS_DYNAMIC_BUFFER`）。
+
+### SNTP 校时
+
+```c
+esp_sntp_config_t cfg = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+cfg.server_from_dhcp = true;
+cfg.start = true;
+esp_netif_sntp_init(&cfg);
+if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) == ESP_OK) { /* 已校时 */ }
+// 失败也要能用：用 esp_timer_get_time() 的开机微秒数兜底
+```
 
 ### 拆除（严格逆序）
 
@@ -744,13 +855,22 @@ esp_err_t page_stop(void) {
 }
 ```
 
-**四条要点**：
+**六条要点**（前四条是模板自带的，后两条是官方在硬件指南里额外强调的）：
 
 1. **worker 不自删。** 自删后 owner 再 `vTaskDelete` 句柄就是野指针；
    ESP-IDF 里任务自删的栈回收时机也不好控制——官方注释明确写了这点；
 2. **超时返回错误，不要强删。** 框架会保留页面让你重试；
 3. **`eSetValueWithOverwrite`** 保证停止命令不会被旧命令覆盖掉；
-4. **任务优先级 4**（与 LVGL 同级）。只有输入派发任务是 5，因为它持锁时间极短。
+4. **任务优先级 4**（与 LVGL 同级）。只有输入派发任务是 5，因为它持锁时间极短；
+5. **停止超时后保留任务句柄与完成信号量，供后续重试。**
+   别在超时分支里把 `s_task` / `s_stopped` 清成 NULL——清了就再也没有第二次机会，
+   也失去了诊断信息（第 12.5.1 节）；
+6. **不能让旧任务清空新任务的句柄。** 快速"退出→再进入"时，
+   旧任务收尾跑到一半可能把新任务刚写好的句柄覆盖掉，
+   于是新任务再也没人能停止它。判据是"这个句柄是不是**我这次启动的**"，不是"它是否非空"。
+
+> 官方原文：音频、低功耗和 BLE 工作任务**在最后一次共享状态访问之后**才发完成确认，
+> 随后挂起，由生命周期所有者删除。详见第 12.5.1 节。
 
 worker 里要更新界面？自己加锁：
 

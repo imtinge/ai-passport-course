@@ -174,8 +174,8 @@ void my_page_exit(void) {
     // 2. 停定时器
     if (s_timer) { lv_timer_delete(s_timer); s_timer = NULL; }
 
-    // 3. 停任务（或让它自己退出后 vTaskDelete）
-    if (s_task)  { vTaskDelete(s_task); s_task = NULL; }
+    // 3. 停任务（协作停止握手，见 12.5.1；不要直接 vTaskDelete）
+    worker_stop(&s_worker);
 
     // 4. 最后删 UI
     if (s_scr)   { lv_obj_delete(s_scr); s_scr = NULL; }
@@ -188,6 +188,59 @@ void my_page_exit(void) {
 > PokeWalk 的规则原文：
 > "**删 screen 前先停定时器**——否则 timer 回调会访问野指针。
 > `play_collect_exit()` 就是照这条写的：先 `lv_timer_delete` 再 `lv_obj_delete`。"
+
+### 12.5.1 停止握手：不要用 `vTaskDelete` 硬删
+
+上面第 3 步是最容易写错的地方。很多教程（包括本书前面某些地方）会写成
+`vTaskDelete(s_task)`，**官方明确不这么做**：
+
+> 音频、低功耗和 BLE 工作任务使用**协作取消和明确的退出握手**，
+> 不再强制删除仍可能访问外设或 UI 的任务。
+> —— `docs/hardware-design/AI_HARDWARE_DEVELOPMENT_GUIDE.zh_CN.md` §4
+
+理由是：`vTaskDelete` 会在任务**任意一条指令处**把它抹掉。
+如果这个任务此刻正持有 I2C 总线、正写 I2S DMA、或正持有 LVGL 锁，
+删掉它就等于把这些资源永久留在"被占用"状态——
+下一次初始化会失败，或者更糟：静默拿到一个半初始化的外设。
+
+**官方契约（照抄就能用）**：
+
+1. 工作任务在**最后一次共享状态访问之后**才发完成确认，然后**自己挂起**
+   （`vTaskSuspend(NULL)` 或等信号量），**由生命周期所有者**决定何时 `vTaskDelete`；
+2. **停止超时后保留任务句柄和完成信号量**，供后续重试；
+3. **不能让旧任务清空新任务的句柄**——这是最隐蔽的一条：
+   用户快速"退出→再进入"时，旧任务的收尾代码跑到一半，
+   把新任务刚写进去的句柄/信号量清成 NULL，于是新任务再也没人能停止它。
+   判断依据是"这个句柄是不是我这次启动的"，不是"它是不是非空"。
+
+```c
+// 工作任务侧
+static void worker_task(void *arg)
+{
+    while (!s_stop_requested) {
+        do_one_chunk();                 // 可能访问 I2S / I2C / UI（持锁）
+    }
+    // ★ 到这一行，之后不会再碰任何共享状态
+    xSemaphoreGive(s_done_sem);         // 1. 先发完成确认
+    vTaskSuspend(NULL);                 // 2. 再挂起，等所有者删除
+}
+
+// 所有者侧
+static bool worker_stop(TickType_t timeout)
+{
+    s_stop_requested = true;
+    if (xSemaphoreTake(s_done_sem, timeout) != pdTRUE) {
+        return false;                   // 3. 超时：保留句柄与信号量，留给下次重试
+    }
+    vTaskDelete(s_task);                // 只有确认它已挂起，才真正删除
+    s_task = NULL;
+    return true;
+}
+```
+
+> 第 27 章的 Audio 示例和第 30 章的 BLE 示例都是这套写法的官方活样本
+> （手写 `host_task` + `xSemaphoreGive` + `vTaskSuspend`），建议对照读。
+> 只有**确定不碰外设、不持锁**的纯计算任务，才可以直接 `vTaskDelete`。
 
 ## 12.6 一个真实的死锁案例
 
@@ -287,8 +340,14 @@ ESP_LOGI(TAG, "stack left: %u", uxTaskGetStackHighWaterMark(NULL));
 - **非 LVGL 任务碰 UI 必须 `bsp_lvgl_lock()`**；
 - 回调派发四模式，判断标准是"会不会阻塞超过 1 ms"；
 - 销毁顺序：**停定时器 → 停任务 → 删 UI**；
+- 停任务要用**协作停止握手**（先发完成确认 → 挂起 → 所有者删除），
+  **不要 `vTaskDelete` 硬删**可能正持有外设或 UI 的任务（12.5.1）；
 - 队列出错要排空，否则背压会死锁上游；
 - 每帧跑满的循环要 `vTaskDelay(1)` 喂看门狗；
 - 栈上数组不超过 1 KB，用 `uxTaskGetStackHighWaterMark()` 验证。
 
 第二部分到此结束。接下来是五个真实项目的拆解。
+
+> **延伸阅读 · 官方经验条目**：
+> [设备端对弈 AI 的墙钟预算](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/on-device-game-ai-wall-clock-budget.zh_CN.md)
+> ——每秒约 1.5 万节点、用时间预算做迭代加深、让出 CPU 别饿死空闲任务（第 13 章 Doom 与棋类玩法直接相关）

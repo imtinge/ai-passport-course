@@ -195,7 +195,7 @@ I (1240) mem: free=228410 min_free=201120 largest=7264
 
 LVGL 有自己的内存池，**不和系统堆共享**：
 
-```
+```text
 # LVGL 内置 malloc 池大小(KB)。它是独立静态区、不与系统堆共享，
 # 配大了会白白占用 RAM。
 # 24KB 够 header + 列表 + 通知/锁屏浮层；
@@ -223,7 +223,7 @@ LVGL 对象树占多少，取决于你同时存在多少个对象和多少样式
 
 ## 11.5 省内存的 sdkconfig 清单
 
-```
+```text
 # 关掉用不到的协议栈
 CONFIG_LWIP_IPV6=n
 CONFIG_BT_ENABLED=n                    # 不用蓝牙就关（省几十 KB）
@@ -288,3 +288,9 @@ DOOM 项目的 `sdkconfig.defaults` 思路总结得很好：
 - 剩余可用堆 < 30 KB 就该砍功能了。
 
 下一章讲并发：任务之间怎么安全协作。
+
+> **延伸阅读 · 官方经验条目**：
+> [静态缓冲按面板算 / 发布产物验证](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/release-artifact-verification.zh_CN.md)
+> （一处 51 KB 缓冲错误让空闲堆只剩 8 KB） ·
+> [视觉小说剧本包预算](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/vn-script-pack-budget-and-failure-modes.zh_CN.md) ·
+> [网络音频流与内存预算](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/phoenixzhc/network-audio-streaming-and-memory.zh_CN.md)

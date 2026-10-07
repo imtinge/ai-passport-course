@@ -200,7 +200,7 @@ gpio_wakeup_enable(GPIO_NUM_0, GPIO_INTR_LOW_LEVEL)   // ★ 引脚号，不是�
 esp_deep_sleep_start()                     // 正常不返回
 ```
 
-### Wi-Fi
+### Wi-Fi（第 10 章）
 
 ```c
 esp_netif_init()
@@ -209,11 +209,74 @@ esp_netif_create_default_wifi_sta()
 esp_wifi_init(&(wifi_init_config_t)WIFI_INIT_CONFIG_DEFAULT())
 esp_wifi_set_mode(WIFI_MODE_STA)
 esp_wifi_set_config(WIFI_IF_STA, &cfg)
+esp_wifi_set_storage(WIFI_STORAGE_RAM)     // 或 WIFI_STORAGE_FLASH（自动存 NVS）
 esp_wifi_start()
 esp_wifi_connect()
-esp_wifi_scan_start(&cfg, true)  esp_wifi_scan_get_ap_records(&num, aps)
+esp_wifi_scan_start(&cfg, false)           // ★ block=false，别阻塞
+esp_wifi_scan_get_ap_num(&num)             // 先取总数
+esp_wifi_scan_get_ap_records(&num, aps)    // 再取记录（不取不释放缓存）
+esp_wifi_sta_get_ap_info(&ap)              // 连着的时候查当前 RSSI/信道
+esp_wifi_disconnect()  esp_wifi_stop()  esp_wifi_deinit()
 esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, handler, NULL)
 esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, handler, NULL)
+```
+
+事件：`WIFI_EVENT_STA_START` / `STA_CONNECTED` / `STA_DISCONNECTED` / `SCAN_DONE` /
+`WIFI_EVENT_AP_STACONNECTED` → `IP_EVENT_STA_GOT_IP`（★ 唯一"已联网"标志）/
+`IP_EVENT_STA_LOST_IP` / `IP_EVENT_AP_STAIPASSIGNED`（SoftAP 下发 IP）。
+
+断开 reason：`wifi_event_sta_disconnected_t::reason`
+`15/202`=密码错 · `201`=`NO_AP_FOUND`（想想 5 GHz）· `200`=`BEACON_TIMEOUT`（信号弱）。
+
+### 校时 SNTP
+
+```c
+esp_sntp_config_t c = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+c.server_from_dhcp = true; c.start = true;
+esp_netif_sntp_init(&c)
+esp_netif_sntp_sync_wait(ticks)      // 带超时；返回 ESP_TIMEOUT 时用开机时长兜底
+esp_netif_sntp_deinit()
+time() / localtime() / settimeofday()
+```
+
+### HTTP 客户端（第 10c 章）
+
+```c
+esp_http_client_init(&cfg)      esp_http_client_perform(client)
+esp_http_client_set_url(c,url)  esp_http_client_set_method(c,HTTP_METHOD_POST)
+esp_http_client_set_header(c,"Content-Type","application/json")
+esp_http_client_set_post_field(c,body,len)
+esp_http_client_get_status_code(client)
+esp_http_client_get_content_length(client)      // 可能 -1（chunked）
+esp_http_client_cleanup(client)                 // ★ 成败都要调
+// 手动模式（下载大文件）
+esp_http_client_open(c,0) → esp_http_client_fetch_headers(c)
+  → esp_http_client_read(c,buf,len) → esp_http_client_close(c)
+// 事件：HTTP_EVENT_ON_CONNECTED / ON_HEADER / ON_DATA / ON_FINISH / ERROR / DISCONNECTED
+```
+
+常用 `esp_http_client_config_t` 字段：`timeout_ms`（必设）、`event_handler`+`user_data`、
+`buffer_size`、`cert_pem`（+`EMBED_TXTFILES`）、`crt_bundle_attach`、`use_global_ca_store`、
+`max_redirection_count`、`keep_alive_enable`、`skip_cert_common_name_check`（仅调试）。
+
+### 配网（第 10b 章，组件 `wifi_provisioning`）
+
+```c
+wifi_prov_mgr_init(cfg)                     // cfg.scheme = wifi_prov_scheme_ble
+wifi_prov_mgr_is_provisioned(&provisioned)
+wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_1, pop, "BLUFI_FoloPassport", NULL)
+wifi_prov_mgr_stop_provisioning()  wifi_prov_mgr_deinit()
+wifi_prov_mgr_reset_provisioning()          // 清除凭据
+// 事件 WIFI_PROV_EVENT：INIT / START / CRED_RECV / CRED_FAIL / CRED_SUCCESS / END
+wifi_prov_mgr_get_wifi_disconnect_reason(&reason)
+```
+
+### JSON（组件 `json` / cJSON）
+
+```c
+cJSON_ParseWithLength(buf, len)     // ★ 传长度，别让它自己 strlen
+cJSON_GetObjectItem(root, "key")    cJSON_IsNumber() / cJSON_IsString()
+cJSON_GetStringValue(item)          cJSON_Delete(root)     // ★ 一定删
 ```
 
 ## A.8 常用 LVGL API
@@ -340,7 +403,7 @@ xtensa-esp32-elf-addr2line ...                                # ESP32/S2/S3 用�
 
 ## A.10 内存数字（贴在显示器上）
 
-```
+```text
 SRAM                    约 400 KB
 可用堆（跑起 LVGL+WiFi） 约 230 KB
 最大连续空闲块          < 8 KB
@@ -373,3 +436,26 @@ LVGL 池推荐             24 KB
 一个有用的观察：**官方仓库带一套"不需要设备就能跑"的主机测试**
 （`tests/` 下的 C 测试 + Python 测试）。这正是第 18.6 节那两级门禁的来源——
 把"能在 PC 上验证的"和"必须插设备验证的"分开，是这套工程规范的核心思路。
+
+## A.12 动手前红线清单（一页纸）
+
+做设计、估预算、排查"怎么又炸了"之前，先把这张表扫一遍。
+每一项都来自前面某章，这里只做**汇总 + 快速定位**，数字变了以原章节为准。
+
+| 红线 | 数字 | 为什么是红线 | 去哪查 |
+| --- | --- | --- | --- |
+| 没有 PSRAM | — | 大数组/大图/大字体只能留 Flash 或静态，不能 malloc 一大块 | 1.1 / 11.1 |
+| 最小空闲堆下限 | **> 30 KB** | 低于此 OTA、BLE、音频峰值叠加会翻车 | 11.1 / 23.3 |
+| LVGL 绘制缓冲 | **40 行 ≈ 19.2 KB** | 源码 `BSP_LVGL_DRAW_BUFFER_LINES=40`；改小省内存但掉帧 | 5.3 / E.7 |
+| LVGL 内存池 | 推荐 **24 KB** | 独立从内部 RAM 划出，不占你 `malloc` 的堆 | 11.4 |
+| I2S DMA 缓冲 | **90 ms**（6 desc × 240 frame @ 16 kHz） | UI 一卡就爆音的量化边界 | 10c.5 |
+| 电池容量 | **520 mAh**（优特利电芯） | 电量预算、待机电流都基于它 | 8.1 |
+| 栈上数组上限 | **≤ 1 KB** | 超过就栈溢出（静默杀手） | 11.2 纪律 1 |
+| 最大连续空闲块 | **< 8 KB** | 总堆够 ≠ 连续块够，mmap/大结构会失败 | 11.1 |
+| 整屏 240×320 RGB565 | **150 KB**（放不下堆） | 必须 mmap 或分块，不能整屏驻留 RAM | 9.3 / 11.1 |
+| factory 分区 | `0x10000` 起，长 `0x7f0000` | 默认布局**无 OTA 槽**，改分区表才能 OTA | 1.6 / 9.1 / 10c.6 |
+| flash-MMU 页 | 128 个 | mmap 每开一个文件用掉一页，用掉就少 | 9.3 方案 B |
+| 任务栈常见值 | **4096 B** | 含 LVGL 调用时要更大，且用静态栈更稳 | 7.4 / 11.2 纪律 2 |
+
+**使用姿势**：新建一个玩法前，先把"屏幕 + 音频 + 联网 + 字体"各自的峰值堆加起来，
+对照 30 KB 下限看还剩多少；任何一项超出，先回这一页改方案，别等烧进去再救。

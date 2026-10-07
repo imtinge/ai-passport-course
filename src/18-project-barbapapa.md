@@ -55,7 +55,7 @@
 
 本实战的素材不是手工转的，而是一套脚本一次性生成（`tools/barbapapa/`）：
 
-```
+```text
 官网 GIF  ──► fetch_assets.py ──► bbp_img_00..09.bin   (裸 RGB565 像素，无文件头)
 Windows TTS ─► make_tts.ps1 ──► wav/NN.wav ─┐
                                           └─► fetch_assets.py ──► bbp_voice_00..09.pcm
@@ -499,7 +499,7 @@ idf.py build && idf.py flash monitor
 
 按四段分开说，**不要把"编译通过"说成"硬件通过"**：
 
-```
+```text
 Build       : idf.py build 通过 / 镜像 xxxx KB
 Host tests  : （本页无主机测试；snippets/ 有可编译片段）
 Device tests: 真机验收矩阵 6 项中 N 项通过

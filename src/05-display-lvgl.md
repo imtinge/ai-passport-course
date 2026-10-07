@@ -81,6 +81,16 @@ SPI2 DMA 事务队列（80 MHz，trans_queue_depth=10）→ ST7789P3
    在 24 KB 内存池 + 无 PSRAM 上不可靠。
 4. **没有 TE 信号**，高速动画理论上可能撕裂——用局部更新、降低重绘面积来规避。
 
+> ⚠️ **官方指南在这里和源码对不上，以源码为准。**
+> `docs/hardware-design/AI_HARDWARE_DEVELOPMENT_GUIDE.zh_CN.md` 写的是
+> "240 × 20 像素的单 DMA 缓冲，RGB565 约 9.6 KB"，而当前
+> `components/bsp/src/bsp_display_lvgl.c` 是 `#define BSP_LVGL_DRAW_BUFFER_LINES 40`
+> （注释：40 行单缓冲约 19.2 KB）。
+> 原因是指南标注的"代码复核日期 2026-09-14"早于 `perf(display): improve LVGL
+> refresh throughput`（2026-09-20，把行数从 20 提到 40）。
+> **这是第 E.7 节"文档滞后"的又一个实例**——看到 9.6 KB 不用怀疑自己算错了。
+> 量化影响：一屏从 16 个块变成 8 个块，全屏重绘占满的 20 ms 周期数减半。
+
 ## 5.4 任务模型与锁（最容易出事的地方）
 
 `bsp_lvgl_init()` 之后存在一个独立任务，参数来自
@@ -463,7 +473,51 @@ static void sleep_now(void)
 
 顺序不能乱：**先让软件停止访问硬件，再让硬件睡。**
 
-## 5.11 小结
+## 5.11 游戏与高帧率场景：官方验收 SOP
+
+做游戏类玩法（第 13/14 章）时，"在电脑上跑得动"和"在板上玩得舒服"是两件事。
+官方为此专门写了一篇 SOP：
+[`docs/development/engineering/game-demo-to-device-acceptance.zh_CN.md`](https://github.com/FoloToy/ai-passport/blob/main/docs/development/engineering/game-demo-to-device-acceptance.zh_CN.md)。核心是这条链路：
+
+```text
+可移植 C 内核 → H5 / Wasm 评审外壳 → 同种子回放比对 → 真机验收
+```
+
+**关键约束**：玩法状态机、时钟与 tick 规则、行走/碰撞/计分放在**可移植 C** 里，
+让**同一批源文件**同时用于主机测试、Wasm 和固件；浏览器输入、显示、缩放与评审控件
+留在 H5 外壳，**不再实现第二套计分或行走模型**。渲染器可移植就共用，
+基于 LVGL 的页面也可以只共用玩法模型与布局数据。
+ESP-IDF/LVGL、ADC 按键、电量、显示传输与任务所有权放在**设备适配层**。
+
+**五步**：
+
+| 步 | 做什么 | 通过条件 |
+| ---: | --- | --- |
+| 0 | 先写**场景表**：开始/结束、屏幕方向、三键映射、短按/长按、正常与失败路径、重玩/退出 | 不看源码的玩家也能说清每一步按哪个键 |
+| 1 | 可移植 C + H5 外壳；原生 C 与 Wasm **同种子、同输入序列、同时间步进**回放比对 | 状态与共享渲染输出差异在容差内 |
+| 2 | 两轮互补验收：**受控场景**（覆盖各分支）+ **无提示游玩**（从头玩一遍） | 场景表全 PASS；**只靠场景注入或单张截图都不算** |
+| 3 | 集成进应用自己的 UI，跑仓库完整验证，记录提交号/固件哈希/素材哈希 | 能进预期起始画面，且能识别装的是哪一版 |
+| 4 | 真机重复同一张场景表，测量**设备独有事实** | 实体按键与完整流程通过，真机测量达标 |
+
+第 4 步的"设备独有事实"是这份 SOP 最有价值的部分——**网页性能计数器、串口截图和
+C 自动化测试都不能证明实体屏幕的流畅度或长时间游玩的内存安全性**。要实测的是：
+
+- 提交帧率，以及可获得时的屏幕完成帧节奏；
+- 渲染与显示耗时；
+- **空闲/最低堆内存与最大连续块**（第 11 章）；
+- 按键响应、崩溃、看门狗、分配失败、撕裂或黑帧。
+
+按游戏探针计划**预热并采样足够时长，只比较相同场景**，用第 0 步预先定下的目标判。
+
+两条硬纪律：
+
+- **改了共享 C 或素材 → 重新构建 Wasm 与固件 → 复测 Demo 场景 → 再复测真机**，
+  不能仅凭网页结果关闭真机失败项；
+- 交接记录留五类证据：**版本身份 / Demo / 构建 / 真机 / 结论**，
+  每类分别标 `PASS`、`FAIL` 或 `NOT RUN`，缺证据就标 `NOT RUN`，
+  必要关卡为 `FAIL` 或 `NOT RUN` 时**不得标为可发布**。
+
+## 5.12 小结
 
 - 版本是 **LVGL 9.5**，旧教程的 `lv_img_*` / `lv_scr_load` 要换成 `lv_image_*` / `lv_screen_load`；
 - 点亮三步：`bsp_display_init` → `bsp_lvgl_init` → `bsp_display_backlight`；
@@ -477,3 +531,9 @@ static void sleep_now(void)
 下一章讲按键——三个键怎么撑起一整套交互。
 
 > 官方把"屏幕 + 背光"做成最小可跑示例的逐行源码，见第 25 章（Display 示例）。
+
+> **延伸阅读 · 官方经验条目**（`docs/reference/`，非强制但带实测数字）：
+> [显示刷新与深睡](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/display-refresh-and-deep-sleep.zh_CN.md) ·
+> [横屏旋转与深睡按键唤醒](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/landscape-rotation-and-deep-sleep-key-wake.zh_CN.md) ·
+> [串口截屏协议](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/y2lin/serial-screenshot-protocol.zh_CN.md) ·
+> [音量计 UI 平滑与杂色块](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/y2lin/meter-ui-smoothing-and-layout.zh_CN.md)

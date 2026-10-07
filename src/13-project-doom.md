@@ -16,7 +16,7 @@
 
 ## 13.1 工程结构
 
-```
+```c
 ai-passport-doom/
 ├── CMakeLists.txt          sdkconfig.defaults
 ├── partitions.csv          README.md
@@ -230,3 +230,9 @@ idf.py -p COM4 monitor
 - `--wrap=clock` 是移植第三方 C 库的利器；
 - 它**禁用了音频**，说明内存有多紧；
 - 想"看懂一个完整项目"就从这里开始。
+
+> **延伸阅读 · 官方经验条目**：
+> [设备端对弈 AI 的墙钟预算](https://github.com/FoloToy/ai-passport/blob/main/docs/reference/shinku-chen/on-device-game-ai-wall-clock-budget.zh_CN.md)
+> ——棋类玩法在这块板上的节点数上限（约每秒 1.5 万）、时间预算式迭代加深，以及如何用"失误率"表达难度；
+> [游戏 Demo 到真机验收 SOP](https://github.com/FoloToy/ai-passport/blob/main/docs/development/engineering/game-demo-to-device-acceptance.zh_CN.md)
+> ——"可移植 C → H5/Wasm 评审 → 同种子回放比对 → 真机"的完整链路，见第 5.11 节

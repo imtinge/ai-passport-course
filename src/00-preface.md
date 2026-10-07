@@ -44,7 +44,7 @@
 | 部分 | 章节 | 你会得到什么 |
 | --- | --- | --- |
 | 起步 | 0b,1–3 | 硬件事实、ESP-IDF 速通、把固件跑起来 |
-| 常用功能 | 4–12 | 屏幕、按键、音频、电量、存储、联网、内存、并发 |
+| 常用功能 | 4–12 | 屏幕、按键、音频、电量、存储、**联网三章（10 连上 / 10b 配网 / 10c 取数）**、内存、并发 |
 | 实战拆解 | 13–18 | 5 个社区仓库 + 巴巴爸爸（你用 Trae 生成，非官方） |
 | 手把手三件事 | 19–21 | 中文、图片、声音照着做一遍 |
 | 收尾 | 22–23 | 排错、练习路线 |
@@ -68,12 +68,23 @@
 这两个路径都是作者本机的，你 clone 到自己的机器后会不一样——本书只保证**文件名与行号**可核对。
 完整仓库索引见附录 B。
 
+> **⚠ 一份 fork 会让你找不到文件。** 作者本机的 `D:/trae_projects/AIP/ai-passport`
+> 是**巴巴爸爸 fork**：`main/` 里只有 Bluey / Barbapapa / PawPatrol / MengKe / Volume
+> 五个玩法页。而本书第 24–31 章讲的是**官方基线的 7 个硬件测试 demo**。
+> 两者 `components/bsp` 一致，**`main/` 不同**（那些 `demo_*.c` 文件可能还在，
+> 只是没注册进菜单）。照章节找文件时先确认自己手上的是哪一份，详见第 24 章开头的提示。
+
 拿到官方基线（任选其一，国内走 Gitee 更快）：
 
 ```bash
 git clone https://github.com/folotoy/ai-passport        # GitHub 主仓库
 git clone https://gitee.com/FoloToy/ai-passport         # Gitee 国内镜像（克隆快）
 ```
+
+> **不想写 C？** 官方还有第二个仓库 `FoloToy/ai-passport-micropython`：
+> 同一块板子，刷预编译的 MicroPython 固件，然后用 **Python 写 `main.py`**。
+> 本书第 1、4 章的**引脚事实在那边完全通用**，但内存和深睡的约束更紧。
+> 详见附录 **B.7**。
 
 ## 一个贯穿全书的前提
 
@@ -91,7 +102,7 @@ AI Passport 是 **ESP32-C3 + 8 MB Flash + 无 PSRAM**。
 
 硬件细节在不同文档里可能冲突。官方规定的优先级顺序是：
 
-```
+```c
 产品规格与实测结果
   → components/bsp/include/bsp_pins.h
     → BSP 头文件与实现
