@@ -16,6 +16,38 @@
 
 源码注释（`demo_ble.c:1`）：`// main/demo_ble.c —— NimBLE 广播示例；手机可扫描到 FoloPassport。`
 
+### 30.1.1 为什么是 NimBLE，不是 Bluedroid
+
+ESP-IDF 有两套 BLE 协议栈，选错了会**同时**影响内存、功能和代码：
+
+| | **NimBLE**（本项目用） | **Bluedroid** |
+| --- | --- | --- |
+| 范围 | 只有 BLE | BLE + 经典蓝牙 |
+| 内存占用 | 小 | 大（经典蓝牙那套协议栈很重） |
+| 适合 | 纯 BLE 设备、省电 | 需要经典蓝牙/SPP 的老设备 |
+| C3 支持 | ✅ | ✅（但经典蓝牙芯片本来就不存在） |
+
+官方 `sdkconfig` 里写得很明确：
+
+```ini
+CONFIG_BT_ENABLED=y
+CONFIG_BT_NIMBLE_ENABLED=y
+# CONFIG_BT_BLUEDROID_ENABLED is not set
+```
+
+**为什么是 NimBLE？两个理由，一个硬件一个法规：**
+
+1. **C3 没有经典蓝牙。** 只有初代 ESP32 同时支持 Classic + BLE；
+   后续型号（含 C3）**只有 BLE**。所以经典蓝牙那部分代码对你毫无意义，
+   带着它只白占 Flash 和 RAM。
+2. **省电。** NimBLE 的休眠和连接参数管理更省，配合深睡才压得住电流（第 8 章）。
+   这块板 520 mAh，省电是硬指标。
+
+> **别把 `NIMBLE_ROLE_CENTRAL` 之类开起来。** 官方只开了
+> `..._ROLE_PERIPHERAL=y`（从机，广播）和 `..._ROLE_BROADCASTER=y`（广播者），
+> `MAX_CONNECTIONS=1`，`CENTRAL` 和 `OBSERVER` 明确是 `n`。
+> 你只需要"能被手机扫到"，做 central（去连别人）纯属浪费 Flash。
+
 ## 30.2 NimBLE 需要自己的 host 任务
 
 Wi-Fi 的协议栈由 ESP-IDF 托管；**NimBLE 的 host 协议栈要你自己起一个任务跑 `nimble_port_run()`**：

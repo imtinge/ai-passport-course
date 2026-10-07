@@ -1,7 +1,14 @@
 # 22. 调试与排错
 
-嵌入式调试和 PC 调试最大的区别是：**没有断点，没有 debugger**（除非接 JTAG）。
+嵌入式调试和 PC 调试最大的区别是：**没有断点，没有 debugger**——**大多数情况下**如此。
 你的主要工具是日志、经验和对 panic 信息的解读能力。
+
+> 📌 **但你这块板是个例外：它能打断点。**
+> 前面说过 GPIO18/19 是 **USB-Serial-JTAG**。ESP32-C3 内置这个外设
+> （`SOC_USB_SERIAL_JTAG_SUPPORTED = 1`），它**同时**是串口和 JTAG 调试口——
+> 一根 USB 线、零额外硬件，就能用 OpenOCD + GDB 打断点、看变量、单步。
+> 所以"嵌入式没法调试"是过时印象，不是这块板的事实。
+> 怎么用见 **22.9 真断点调试（JTAG）**；不想折腾就接着用日志，**99% 的问题日志够用**。
 
 ## 22.0 先按现象定位（排障索引）
 
@@ -514,7 +521,61 @@ UART0 的默认 TX 是 **GPIO21，和背光是同一个引脚**——把日志�
 > 这套现象容易误判成"脚本 bug"或"串口线坏了"，实际耗掉的时间远超它本身的价值。
 > 记住一句：**端口在 ≠ SoC 在跑**。
 
-## 22.9 小结
+## 22.9 真断点调试（JTAG，日志救不了的时候）
+
+前面 22.1–22.8 全是"没有断点"的世界观。但这块板**真的能打断点**——
+ESP32-C3 内置 USB-Serial-JTAG（GPIO18/19），一根 USB 线同时是串口和 JTAG。
+
+**链路长这样**（四层，别被名字吓到）：
+
+```text
+VS Code  ──esp-gdb──▶  GDB 客户端
+                        │ TCP :3333
+                        ▼
+                     OpenOCD  (openocd-esp32)
+                        │ USB 序列口
+                        ▼
+                 ESP32-C3 内置 USB-Serial-JTAG  ──▶ 你的固件
+```
+
+- **esp-gdb / openocd-esp32** 是乐鑫维护的 GDB / OpenOCD 分支，ESP-IDF 已自带；
+- OpenOCD 起来后会开三个端口：**3333** 给 GDB、**4444** telnet、**6666** TCL；
+- 关键点：**固件必须编成 debug 模式**（默认就是，`-Og` 带 DWARF），
+  而且**不能开编译器优化到看不见变量**。release 构建即使连上 JTAG 也看不到变量。
+
+**上手步骤**（VS Code + ESP-IDF 扩展）：
+
+1. `ESP-IDF: Select OpenOCD Board Configuration` → 选 **ESP32-C3 chip (via Built-in USB-JTAG)**
+   （**不要**选 ESP32-S3；芯片不同，`/device found` 那一行的 part id 会对不上）；
+2. `ESP-IDF: OpenOCD Manager` → `Start OpenOCD`，看到 `Listening on port 3333 for gdb connections`；
+3. 在可疑那行按 **F9** 打断点；
+4. **F5** 开始调试——会停在 `app_main` 第一行；
+5. **F10** 逐过程（不进函数）、**F11** 步入、**Shift+F11** 跳出、
+   **Shift+F5** 断开；
+6. 右键断点 → 编辑断点 → 填 `i==6`，做**条件断点**（等循环到第 6 次再停）。
+
+**左侧面板**能看变量、监视、调用堆栈、断点；**调试控制台**里直接敲变量名回车就能求值。
+这比"加一串 `ESP_LOGI` 重新烧录"快一个数量级——**改一次代码要几十秒编译烧录，看一个变量是零成本**。
+
+**四个必须知道的坑**：
+
+| 坑 | 现象 | 怎么办 |
+| --- | --- | --- |
+| 芯片配置选错 | OpenOCD 报 `esp_usb_jtag: Device found` 失败 / 一直 `Examination failed` | 必须选 C3 那项；换 USB 线（要数据线） |
+| deep sleep 打断点 | 设备睡着后 OpenOCD 失联、halt 超时 | 深睡会断电（第 22.8 节）；**调试时先禁用深睡** |
+| 固件是 release | 连上了但变量全是 `<optimized out>` | 用 debug 构建，别开 `-O2`/`-Os` |
+| USB 端口被占 | `LIBUSB_ERROR_NOT_FOUND` / 端口打开失败 | 关掉串口监视器、监视脚本、其它 OpenOCD 实例 |
+
+> **什么时候值得用？** 出现"日志打到了但结果不对""内存地址莫名被改写"
+> "同一个 panic 复现不了"这三类问题时，日志已经到极限了——这时断点能直接看到
+> "那个变量到底是什么值"。**但 99% 的问题（第 22.3 节那张表里的）用日志就够了**，
+> 别为了调一个打印语句去折腾工具链。
+
+> 📖 **延伸阅读**：[官方 JTAG 调试指南](https://docs.espressif.com/projects/esp-idf/zh_CN/v5.5.3/esp32c3/api-guides/jtag-debugging/index.html) ·
+> [OpenOCD 故障排查](https://github.com/espressif/openocd-esp32/wiki/Troubleshooting-FAQ) ·
+> [配置内置 JTAG](https://docs.espressif.com/projects/esp-idf/zh_CN/v5.5.3/esp32c3/api-guides/jtag-debugging/configure-builtin-jtag.html)
+
+## 22.10 小结
 
 - 日志是第一工具，**内存和栈的三个数字要常打**；
 - **抓不到日志时先问"设备醒着吗"**——deep sleep 时 USB-Serial-JTAG 随 SoC 断电，
@@ -523,6 +584,7 @@ UART0 的默认 TX 是 **GPIO21，和背光是同一个引脚**——把日志�
   Stack protection = 栈溢出，watchdog = 不让出 CPU；
 - 22.3 那张症状对照表值得打印贴墙；
 - 定位靠二分注释 / 最小复现 / **搬到 PC 上跑**；
+- **真断点不是做不到**：内置 USB-JTAG 走 OpenOCD，见 22.9——但别为调日志而折腾它；
 - **编译通过 ≠ 硬件验证**。
 
 > **延伸阅读 · 官方经验条目**（这两篇都是"真机才暴露"的排障实录）：

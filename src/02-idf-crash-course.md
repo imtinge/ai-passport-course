@@ -106,6 +106,85 @@ AI Passport 项目一般会拉到这几个托管组件：
 它们写在 `main/idf_component.yml` 或 `components/bsp/idf_component.yml` 里，
 首次构建时自动下载，版本记录在 `dependencies.lock`。
 
+### 2.4.1 驱动的名字：为什么是 `esp_driver_i2c` 而不是 `driver`
+
+从 ESP-IDF 5.2 起，官方把原来那个巨大的 `driver` 组件**按外设拆成了独立组件**。
+这件事第一次做的人几乎都会栽——网上老教程里清一色写 `REQUIRES driver`，
+你在 5.5.3 上照抄就会编译失败。
+
+本项目 `components/bsp/CMakeLists.txt` 的真实依赖长这样：
+
+```cmake
+idf_component_register(
+    SRCS "src/bsp_i2c.c" ... "src/bsp_battery.c"
+    INCLUDE_DIRS "include"
+    REQUIRES driver esp_driver_i2c esp_driver_i2s esp_lcd esp_lvgl_port button esp_adc esp_codec_dev
+    PRIV_REQUIRES esp_timer
+)
+```
+
+对照关系（这些目录名都在 `$IDF_PATH/components/` 下真实存在）：
+
+| 你要用的东西 | 头文件 | 5.5.3 里的组件名 | 写 `driver` 行不行 |
+| --- | --- | --- | --- |
+| GPIO | `driver/gpio.h` | `esp_driver_gpio` | 勉强能编过，但**别依赖** |
+| I2C 主机 | `driver/i2c_master.h` | `esp_driver_i2c` | ❌ 会报错 |
+| I2S | `driver/i2s_std.h` | `esp_driver_i2s` | ❌ 会报错 |
+| SPI | `driver/spi_master.h` | `esp_driver_spi` | ❌ 会报错 |
+| UART | `driver/uart.h` | `esp_driver_uart` | ❌ 会报错 |
+| ADC | `esp_adc/adc_oneshot.h` | `esp_adc` | ❌ 会报错 |
+| LCD | `esp_lcd_panel_io.h` | `esp_lcd` | ❌ 会报错 |
+| TWAI / CAN | `driver/twai.h` | 仍在 `driver` 里 | ✅ 可以 |
+
+注意最后两行——**不是所有东西都搬走了**。
+`driver/` 目录在 5.5.3 里仍然存在，但只剩下 `deprecated/`、`i2c`（兼容层）、
+`touch_sensor`、`twai` 这些残留；`components/driver/sdkconfig.rename` 就是迁移标记。
+所以"老教程写 `driver`"在个别外设上还能过，在 I2C/I2S/SPI/ADC 上就断了。
+
+> **为什么官方要拆？** 以前你为了用 I2C，得把整个 `driver` 拖进来，
+> 于是 GPIO、TWAI、触摸全都跟着编译进固件。拆分后按需声明，
+> 既能少编译无关代码，也让"这个组件到底依赖什么"变得可查。
+> 迁移背景见官方 [5.2→5.3 迁移指南](https://docs.espressif.com/projects/esp-idf/zh_CN/v5.3.2/esp32/migration-guides/release-5.x/5.2-to-5.3.html)。
+
+**你什么时候需要关心这段？** 只有当你要**自己写组件**（而不是直接用现成的 `bsp`）时。
+如果你的 `main/CMakeLists.txt` 只 `REQUIRES bsp`，那 bsp 已经把依赖传递过来了，你不用管。
+一旦你开始 `#include "driver/i2s_std.h"` 写自己的驱动，就得自己把 `esp_driver_i2s` 写上。
+
+### 2.4.2 加新组件的三步：声明 → fullclean → 验证
+
+想用注册表上的第三方组件（比如官方 `button`），有命令行一步的方式：
+
+```bash
+idf.py add-dependency "espressif/button^4.1.6"
+```
+
+它会自动改写 `main/idf_component.yml`、下载到 `managed_components/`、更新 `dependencies.lock`。
+
+**但紧接着必须做一次完整清理**：
+
+```bash
+idf.py fullclean
+```
+
+为什么这么强调？因为 CMake 的配置结果有缓存。
+**旧构建目录里没有新组件的头文件路径**，于是你会看到一个
+"我明明写对名字了却说找不到"的错，这类错最消耗时间：
+
+| 现象 | 真实原因 |
+| --- | --- |
+| `fatal error: button.h: No such file or directory` | 依赖加了，但没 fullclean，CMake 不知道 |
+| 头文件找到了，链接时报 undefined symbol | CMakeLists 改了但没重新配置 |
+| 改动"没生效"、跑的还是旧程序 | 同上，缓存 |
+
+在 VS Code 里等价操作是 `ESP-IDF: Full Clean Project`。
+官方文档特别提醒：**在已有工程上改依赖时这一步尤其重要**——
+新建工程天然干净，改老工程最容易忘了。
+
+> **顺带一句**：`dependencies.lock` 是自动生成的，别手改。
+> 它锁死了每个托管组件的确切版本——这个项目里 `espressif/button` 钉在 **4.2.0**、
+> `esp_lvgl_port` 钉在 **2.9.0**、LVGL 是 `^9.5.0`。
+> 想升级就改 `idf_component.yml`（第 3.1 节讲过为什么本项目要钉死版本）。
+
 ## 2.5 你熟悉的 main() 变成了 app_main()
 
 不是 `int main(void)`，而是：
