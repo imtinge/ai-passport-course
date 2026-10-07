@@ -26,6 +26,13 @@
 > 另注意：姊妹仓库 `ai-passport-micropython` 也用 LVGL v9，
 > 但走的是 Python 绑定（`lv.label()`、`.set_text()`），**和本章的 C API 不能混用**。
 
+> ⚠️ **屏幕 SPI 时钟：官方两份文档自己就打架。**
+> `docs/README.zh_CN.md` 的硬件能力表写 **40 MHz**，
+> 而 `components/bsp/include/bsp_pins.h` 里的 `BSP_LCD_PCLK_HZ` 是 **80 MHz**，
+> 硬件开发指南（`AI_HARDWARE_DEVELOPMENT_GUIDE`）同页也写 **80 MHz**，mode 0。
+> 第三方实测贴跟着 README 抄成了 40 MHz。**信 `bsp_pins.h`：这块屏跑 80 MHz。**
+> 这类"摘要表没跟上源码"的事在本仓库不是孤例——凡是要用的数字，回到头文件确认一遍。
+
 ## 5.2 三步点亮
 
 ```c

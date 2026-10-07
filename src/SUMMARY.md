@@ -66,3 +66,4 @@
 - [B. 代表仓库索引](B-repo-index.md)
 - [C. 术语表](C-glossary.md)
 - [D. 分模块常用代码手册](D-module-cookbook.md)
+- [E. 官方与社区资源地图](E-official-resources.md)
