@@ -17,7 +17,7 @@
 | SRAM | **400 KB（其中 16 KB 专用于 cache）** | 规格书 §3 / §4.1.2.1 |
 | RTC SRAM | **8 KB**（深睡时仍保持，RTC_DATA_ATTR 变量的总量上限） | 规格书 §3 / §4.1.2.1 |
 | eFuse | 4096 bit，其中用户可用 1792 bit | 规格书 §3 / §5 |
-| 内置 flash | 本型号 4 MB（QFN32），默认最高时钟 80 MHz | 规格书 §1.2 / §2.6 |
+| 内置 flash | **8 MB**（QFN32），默认最高时钟 80 MHz；与第 1.6 节分区表口径一致 | 规格书 §1.2 / §2.6 |
 | 外接 flash 映射 | CPU 最大可寻址 16 MB | 规格书 §4.1.2.2 |
 | cache | 16 KB，块大小 32 字节 | 规格书 §4.1.2.3 |
 
@@ -25,6 +25,9 @@
 扣掉 16 KB cache、IDF 的系统占用、任务栈、静态分配（LVGL 池 24 KB、
 绘制缓冲 19.2 KB 等），留给 `malloc` 的就只剩 230 KB 左右——
 而且这是碎片化之后的“最大连续块 < 8 KB”（第 11 章）。
+
+> **eFuse 与安全启动的关系**：这 4096 bit 里有一部分会被 Secure Boot v2
+> 的密钥摘要槽和 Flash 加密密钥占用，且一旦烧录不可逆——见附录 H.2 / H.4。
 
 ## F.2 低功耗（规格书 §5.6）
 
@@ -75,7 +78,7 @@ ADC2 只剩 GPIO5 一根，而且 **Wi-Fi 工作期间 ADC2 不可用**（驱动
 | ROM 日志控制 | GPIO8 电平 + eFuse 共同决定 UART0 ROM 日志开/关 | 表 3-4 |
 | USB 串口/JTAG | GPIO18（D-）/ GPIO19（D+），USB 2.0 **全速 12 Mbit/s**（不是高速 480 Mbit/s） | §4.2.1.5 |
 | UART0 | GPIO20 = U0RXD，GPIO21 = U0TXD | 表 2-7 |
-| JTAG 接口 | GPIO4=MTMS、GPIO5=MTDI、GPIO6=MTCK、GPIO7=MTDO（本板用内置 USB-JTAG；这四根脚已被 I2S/I2C 占用，见第 1 章，仅当不使用对应外设时方可作 JTAG 调试） | 表 2-7 / §2.3.4 |
+| JTAG 接口 | GPIO4=MTMS、GPIO5=MTDI、GPIO6=MTCK、GPIO7=MTDO（本板用内置 USB-JTAG；这四根脚已被 I2S/I2C 占用，见第 1 章，仅当不使用对应外设时方可作 JTAG 调试；**启用安全启动后这些脚会被 eFuse 禁用，见附录 H.2**） | 表 2-7 / §2.3.4 |
 | VDD_SPI | GPIO11，flash 供电；仅当 flash 改外部供电时才可用作 GPIO | §2.3.3 |
 | SPI0/1 固定管脚 | GPIO12~GPIO17（与内置 flash 通讯，**禁止挪用**） | 表 2-7 |
 | SPI2（FSPI）IO MUX | GPIO2=FSPIQ、GPIO4=FSPIHD、GPIO5=FSPIWP、GPIO6=FSPICLK、GPIO7=FSPID、GPIO10=FSPICS0 | 表 2-7 |
