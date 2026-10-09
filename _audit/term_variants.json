@@ -1,0 +1,1880 @@
+[
+ {
+  "group": "烧录/下载",
+  "kinds": 6,
+  "variants": [
+   {
+    "v": "烧录",
+    "c": 25,
+    "files": [
+     "00b-hardware-words.md",
+     "03-first-build.md",
+     "09-storage.md",
+     "10c-network-data.md",
+     "15-project-voice.md",
+     "18-project-barbapapa.md",
+     "22-debugging.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "下载",
+    "c": 16,
+    "files": [
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "10c-network-data.md",
+     "13-project-doom.md",
+     "14-project-multipage.md",
+     "15-project-voice.md",
+     "16-project-pokewalk.md",
+     "17-project-xiaozhi.md",
+     "18-project-barbapapa.md",
+     "B-repo-index.md"
+    ]
+   },
+   {
+    "v": "烧写",
+    "c": 6,
+    "files": [
+     "09-storage.md",
+     "16-project-pokewalk.md"
+    ]
+   },
+   {
+    "v": "刷机",
+    "c": 2,
+    "files": [
+     "10b-provisioning.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "下载到",
+    "c": 1,
+    "files": [
+     "02-idf-crash-course.md"
+    ]
+   },
+   {
+    "v": "刷入",
+    "c": 1,
+    "files": [
+     "E-official-resources.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.51
+ },
+ {
+  "group": "引脚",
+  "kinds": 2,
+  "variants": [
+   {
+    "v": "引脚",
+    "c": 75,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "03-first-build.md",
+     "04-bsp.md",
+     "06-button.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "15-project-voice.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "24-official-framework.md",
+     "31-official-lowpower.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "Pin",
+    "c": 1,
+    "files": [
+     "B-repo-index.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.013
+ },
+ {
+  "group": "串口",
+  "kinds": 4,
+  "variants": [
+   {
+    "v": "串口",
+    "c": 30,
+    "files": [
+     "01-hardware.md",
+     "03-first-build.md",
+     "05-display-lvgl.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "11-memory.md",
+     "15-project-voice.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "B-repo-index.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "COM 口",
+    "c": 4,
+    "files": [
+     "22-debugging.md"
+    ]
+   },
+   {
+    "v": "UART",
+    "c": 2,
+    "files": [
+     "00b-hardware-words.md",
+     "02-idf-crash-course.md"
+    ]
+   },
+   {
+    "v": "串行口",
+    "c": 1,
+    "files": [
+     "00b-hardware-words.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.189
+ },
+ {
+  "group": "任务/线程",
+  "kinds": 4,
+  "variants": [
+   {
+    "v": "任务",
+    "c": 300,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "11-memory.md",
+     "12-concurrency.md",
+     "13-project-doom.md",
+     "14-project-multipage.md",
+     "15-project-voice.md",
+     "16-project-pokewalk.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "24-official-framework.md",
+     "26-official-button.md",
+     "27-official-audio.md",
+     "28-official-battery.md",
+     "29-official-wifi.md",
+     "30-official-ble.md",
+     "31-official-lowpower.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "线程",
+    "c": 13,
+    "files": [
+     "02-idf-crash-course.md",
+     "04-bsp.md",
+     "14-project-multipage.md",
+     "17-project-xiaozhi.md",
+     "18-project-barbapapa.md",
+     "B-repo-index.md"
+    ]
+   },
+   {
+    "v": "task",
+    "c": 5,
+    "files": [
+     "10b-provisioning.md",
+     "12-concurrency.md",
+     "C-glossary.md"
+    ]
+   },
+   {
+    "v": "Task",
+    "c": 1,
+    "files": [
+     "22-debugging.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.06
+ },
+ {
+  "group": "固件/程序",
+  "kinds": 2,
+  "variants": [
+   {
+    "v": "固件",
+    "c": 89,
+    "files": [
+     "00-preface.md",
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "05-display-lvgl.md",
+     "07-audio.md",
+     "09-storage.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "11-memory.md",
+     "12-concurrency.md",
+     "13-project-doom.md",
+     "14-project-multipage.md",
+     "15-project-voice.md",
+     "16-project-pokewalk.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "20-tutorial-image.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "程序",
+    "c": 38,
+    "files": [
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "05-display-lvgl.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "10b-provisioning.md",
+     "13-project-doom.md",
+     "16-project-pokewalk.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "C-glossary.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.299
+ },
+ {
+  "group": "句柄",
+  "kinds": 3,
+  "variants": [
+   {
+    "v": "句柄",
+    "c": 17,
+    "files": [
+     "04-bsp.md",
+     "06-button.md",
+     "12-concurrency.md",
+     "17-project-xiaozhi.md",
+     "18-project-barbapapa.md",
+     "27-official-audio.md",
+     "30-official-ble.md",
+     "C-glossary.md",
+     "D-module-cookbook.md"
+    ]
+   },
+   {
+    "v": "描述符",
+    "c": 17,
+    "files": [
+     "05-display-lvgl.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "20-tutorial-image.md",
+     "22-debugging.md",
+     "A-api-cheatsheet.md",
+     "D-module-cookbook.md"
+    ]
+   },
+   {
+    "v": "handle",
+    "c": 2,
+    "files": [
+     "21-tutorial-audio.md",
+     "C-glossary.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.528
+ },
+ {
+  "group": "缓冲区",
+  "kinds": 4,
+  "variants": [
+   {
+    "v": "缓冲",
+    "c": 89,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "05-display-lvgl.md",
+     "07-audio.md",
+     "09-storage.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "11-memory.md",
+     "13-project-doom.md",
+     "15-project-voice.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "24-official-framework.md",
+     "26-official-button.md",
+     "27-official-audio.md",
+     "30-official-ble.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "缓存",
+    "c": 25,
+    "files": [
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "04-bsp.md",
+     "09-storage.md",
+     "10-network.md",
+     "10c-network-data.md",
+     "11-memory.md",
+     "14-project-multipage.md",
+     "16-project-pokewalk.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "29-official-wifi.md"
+    ]
+   },
+   {
+    "v": "buffer",
+    "c": 8,
+    "files": [
+     "04-bsp.md",
+     "07-audio.md",
+     "11-memory.md",
+     "14-project-multipage.md",
+     "26-official-button.md",
+     "C-glossary.md"
+    ]
+   },
+   {
+    "v": "缓冲区",
+    "c": 6,
+    "files": [
+     "11-memory.md",
+     "13-project-doom.md",
+     "15-project-voice.md",
+     "21-tutorial-audio.md",
+     "B-repo-index.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.305
+ },
+ {
+  "group": "回调",
+  "kinds": 2,
+  "variants": [
+   {
+    "v": "回调",
+    "c": 100,
+    "files": [
+     "00b-hardware-words.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "07-audio.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "12-concurrency.md",
+     "14-project-multipage.md",
+     "17-project-xiaozhi.md",
+     "18-project-barbapapa.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "24-official-framework.md",
+     "26-official-button.md",
+     "28-official-battery.md",
+     "29-official-wifi.md",
+     "30-official-ble.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "callback",
+    "c": 1,
+    "files": [
+     "12-concurrency.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.01
+ },
+ {
+  "group": "中断",
+  "kinds": 2,
+  "variants": [
+   {
+    "v": "中断",
+    "c": 7,
+    "files": [
+     "00b-hardware-words.md",
+     "03-first-build.md",
+     "08-battery-power.md",
+     "10c-network-data.md",
+     "29-official-wifi.md",
+     "31-official-lowpower.md",
+     "B-repo-index.md"
+    ]
+   },
+   {
+    "v": "ISR",
+    "c": 1,
+    "files": [
+     "00b-hardware-words.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.125
+ },
+ {
+  "group": "轮询",
+  "kinds": 2,
+  "variants": [
+   {
+    "v": "轮询",
+    "c": 12,
+    "files": [
+     "06-button.md",
+     "12-concurrency.md",
+     "13-project-doom.md",
+     "18-project-barbapapa.md",
+     "27-official-audio.md",
+     "B-repo-index.md"
+    ]
+   },
+   {
+    "v": "查询",
+    "c": 2,
+    "files": [
+     "03-first-build.md",
+     "10b-provisioning.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.143
+ },
+ {
+  "group": "阻塞/挂起",
+  "kinds": 3,
+  "variants": [
+   {
+    "v": "阻塞",
+    "c": 57,
+    "files": [
+     "00b-hardware-words.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "11-memory.md",
+     "12-concurrency.md",
+     "15-project-voice.md",
+     "17-project-xiaozhi.md",
+     "18-project-barbapapa.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "24-official-framework.md",
+     "26-official-button.md",
+     "27-official-audio.md",
+     "A-api-cheatsheet.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "卡住",
+    "c": 17,
+    "files": [
+     "03-first-build.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "08-battery-power.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "12-concurrency.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "24-official-framework.md",
+     "D-module-cookbook.md"
+    ]
+   },
+   {
+    "v": "挂起",
+    "c": 8,
+    "files": [
+     "12-concurrency.md",
+     "21-tutorial-audio.md",
+     "31-official-lowpower.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.305
+ },
+ {
+  "group": "栈/堆",
+  "kinds": 4,
+  "variants": [
+   {
+    "v": "栈",
+    "c": 123,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "07-audio.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "11-memory.md",
+     "12-concurrency.md",
+     "13-project-doom.md",
+     "14-project-multipage.md",
+     "15-project-voice.md",
+     "16-project-pokewalk.md",
+     "17-project-xiaozhi.md",
+     "18-project-barbapapa.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "26-official-button.md",
+     "27-official-audio.md",
+     "29-official-wifi.md",
+     "30-official-ble.md",
+     "31-official-lowpower.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "堆",
+    "c": 75,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "07-audio.md",
+     "09-storage.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "11-memory.md",
+     "12-concurrency.md",
+     "13-project-doom.md",
+     "14-project-multipage.md",
+     "15-project-voice.md",
+     "16-project-pokewalk.md",
+     "18-project-barbapapa.md",
+     "20-tutorial-image.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "25-official-display.md",
+     "30-official-ble.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "stack",
+    "c": 1,
+    "files": [
+     "12-concurrency.md"
+    ]
+   },
+   {
+    "v": "堆栈",
+    "c": 1,
+    "files": [
+     "22-debugging.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.385
+ },
+ {
+  "group": "编译/构建",
+  "kinds": 4,
+  "variants": [
+   {
+    "v": "编译",
+    "c": 97,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "07-audio.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "11-memory.md",
+     "12-concurrency.md",
+     "13-project-doom.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "20-tutorial-image.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "24-official-framework.md",
+     "25-official-display.md",
+     "27-official-audio.md",
+     "29-official-wifi.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "构建",
+    "c": 37,
+    "files": [
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "05-display-lvgl.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "13-project-doom.md",
+     "15-project-voice.md",
+     "16-project-pokewalk.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "B-repo-index.md"
+    ]
+   },
+   {
+    "v": "build",
+    "c": 4,
+    "files": [
+     "20-tutorial-image.md",
+     "22-debugging.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "Build",
+    "c": 3,
+    "files": [
+     "18-project-barbapapa.md",
+     "C-glossary.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.312
+ },
+ {
+  "group": "组件",
+  "kinds": 3,
+  "variants": [
+   {
+    "v": "组件",
+    "c": 56,
+    "files": [
+     "00-preface.md",
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "15-project-voice.md",
+     "19-tutorial-chinese-font.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "26-official-button.md",
+     "A-api-cheatsheet.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "模块",
+    "c": 19,
+    "files": [
+     "00-preface.md",
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "09-storage.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "12-concurrency.md",
+     "14-project-multipage.md",
+     "22-debugging.md",
+     "B-repo-index.md",
+     "D-module-cookbook.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "component",
+    "c": 1,
+    "files": [
+     "C-glossary.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.263
+ },
+ {
+  "group": "示例/例程",
+  "kinds": 3,
+  "variants": [
+   {
+    "v": "demo",
+    "c": 88,
+    "files": [
+     "00-preface.md",
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "08-battery-power.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "12-concurrency.md",
+     "13-project-doom.md",
+     "15-project-voice.md",
+     "18-project-barbapapa.md",
+     "20-tutorial-image.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "24-official-framework.md",
+     "25-official-display.md",
+     "26-official-button.md",
+     "27-official-audio.md",
+     "28-official-battery.md",
+     "29-official-wifi.md",
+     "30-official-ble.md",
+     "31-official-lowpower.md",
+     "B-repo-index.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "示例",
+    "c": 68,
+    "files": [
+     "00-preface.md",
+     "02-idf-crash-course.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "12-concurrency.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "20-tutorial-image.md",
+     "21-tutorial-audio.md",
+     "23-whats-next.md",
+     "24-official-framework.md",
+     "25-official-display.md",
+     "26-official-button.md",
+     "27-official-audio.md",
+     "28-official-battery.md",
+     "29-official-wifi.md",
+     "30-official-ble.md",
+     "31-official-lowpower.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "Demo",
+    "c": 3,
+    "files": [
+     "05-display-lvgl.md",
+     "13-project-doom.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.447
+ },
+ {
+  "group": "终端/监视器",
+  "kinds": 5,
+  "variants": [
+   {
+    "v": "终端",
+    "c": 12,
+    "files": [
+     "03-first-build.md",
+     "08-battery-power.md",
+     "10-network.md",
+     "31-official-lowpower.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "控制台",
+    "c": 7,
+    "files": [
+     "01-hardware.md",
+     "03-first-build.md",
+     "22-debugging.md"
+    ]
+   },
+   {
+    "v": "监视器",
+    "c": 5,
+    "files": [
+     "03-first-build.md",
+     "22-debugging.md"
+    ]
+   },
+   {
+    "v": "命令行",
+    "c": 2,
+    "files": [
+     "02-idf-crash-course.md",
+     "03-first-build.md"
+    ]
+   },
+   {
+    "v": "monitor",
+    "c": 2,
+    "files": [
+     "22-debugging.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.571
+ },
+ {
+  "group": "屏幕/显示屏",
+  "kinds": 4,
+  "variants": [
+   {
+    "v": "屏",
+    "c": 257,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "09-storage.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "11-memory.md",
+     "12-concurrency.md",
+     "13-project-doom.md",
+     "14-project-multipage.md",
+     "15-project-voice.md",
+     "17-project-xiaozhi.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "20-tutorial-image.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "24-official-framework.md",
+     "25-official-display.md",
+     "26-official-button.md",
+     "27-official-audio.md",
+     "28-official-battery.md",
+     "29-official-wifi.md",
+     "30-official-ble.md",
+     "31-official-lowpower.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "屏幕",
+    "c": 93,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "08-battery-power.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "11-memory.md",
+     "13-project-doom.md",
+     "14-project-multipage.md",
+     "17-project-xiaozhi.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "20-tutorial-image.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "24-official-framework.md",
+     "25-official-display.md",
+     "26-official-button.md",
+     "27-official-audio.md",
+     "29-official-wifi.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "LCD",
+    "c": 21,
+    "files": [
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "08-battery-power.md",
+     "22-debugging.md",
+     "31-official-lowpower.md",
+     "B-repo-index.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "显示器",
+    "c": 2,
+    "files": [
+     "11-memory.md",
+     "A-api-cheatsheet.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.311
+ },
+ {
+  "group": "初始化",
+  "kinds": 2,
+  "variants": [
+   {
+    "v": "初始化",
+    "c": 55,
+    "files": [
+     "02-idf-crash-course.md",
+     "04-bsp.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "09-storage.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "11-memory.md",
+     "12-concurrency.md",
+     "13-project-doom.md",
+     "16-project-pokewalk.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "20-tutorial-image.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "24-official-framework.md",
+     "29-official-wifi.md",
+     "30-official-ble.md",
+     "B-repo-index.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "init",
+    "c": 4,
+    "files": [
+     "10b-provisioning.md",
+     "22-debugging.md",
+     "D-module-cookbook.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.068
+ },
+ {
+  "group": "释放内存",
+  "kinds": 3,
+  "variants": [
+   {
+    "v": "释放",
+    "c": 25,
+    "files": [
+     "04-bsp.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "19-tutorial-chinese-font.md",
+     "20-tutorial-image.md",
+     "22-debugging.md",
+     "31-official-lowpower.md",
+     "B-repo-index.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "free",
+    "c": 3,
+    "files": [
+     "10-network.md",
+     "C-glossary.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "回收",
+    "c": 3,
+    "files": [
+     "18-project-barbapapa.md",
+     "27-official-audio.md",
+     "D-module-cookbook.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.194
+ },
+ {
+  "group": "芯片",
+  "kinds": 4,
+  "variants": [
+   {
+    "v": "芯片",
+    "c": 58,
+    "files": [
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "08-battery-power.md",
+     "09-storage.md",
+     "11-memory.md",
+     "15-project-voice.md",
+     "18-project-barbapapa.md",
+     "22-debugging.md",
+     "28-official-battery.md",
+     "30-official-ble.md",
+     "31-official-lowpower.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "MCU",
+    "c": 18,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "04-bsp.md",
+     "08-battery-power.md",
+     "21-tutorial-audio.md",
+     "B-repo-index.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "SoC",
+    "c": 9,
+    "files": [
+     "00b-hardware-words.md",
+     "22-debugging.md",
+     "C-glossary.md"
+    ]
+   },
+   {
+    "v": "单片机",
+    "c": 1,
+    "files": [
+     "00b-hardware-words.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.326
+ },
+ {
+  "group": "开发板",
+  "kinds": 4,
+  "variants": [
+   {
+    "v": "板子",
+    "c": 64,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "10-network.md",
+     "10c-network-data.md",
+     "11-memory.md",
+     "15-project-voice.md",
+     "17-project-xiaozhi.md",
+     "19-tutorial-chinese-font.md",
+     "20-tutorial-image.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "24-official-framework.md",
+     "25-official-display.md",
+     "26-official-button.md",
+     "28-official-battery.md",
+     "29-official-wifi.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "这块板",
+    "c": 33,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "13-project-doom.md",
+     "19-tutorial-chinese-font.md",
+     "20-tutorial-image.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "30-official-ble.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "板卡",
+    "c": 3,
+    "files": [
+     "04-bsp.md",
+     "12-concurrency.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "开发板",
+    "c": 2,
+    "files": [
+     "04-bsp.md",
+     "E-official-resources.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.373
+ },
+ {
+  "group": "配网/联网",
+  "kinds": 4,
+  "variants": [
+   {
+    "v": "配网",
+    "c": 69,
+    "files": [
+     "00-preface.md",
+     "09-storage.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "17-project-xiaozhi.md",
+     "23-whats-next.md",
+     "29-official-wifi.md",
+     "A-api-cheatsheet.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "联网",
+    "c": 62,
+    "files": [
+     "00-preface.md",
+     "03-first-build.md",
+     "04-bsp.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "09-storage.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "16-project-pokewalk.md",
+     "17-project-xiaozhi.md",
+     "18-project-barbapapa.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "provisioning",
+    "c": 18,
+    "files": [
+     "09-storage.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "17-project-xiaozhi.md",
+     "23-whats-next.md",
+     "29-official-wifi.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": " provisioning",
+    "c": 1,
+    "files": [
+     "C-glossary.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.54
+ },
+ {
+  "group": "唤醒",
+  "kinds": 2,
+  "variants": [
+   {
+    "v": "唤醒",
+    "c": 61,
+    "files": [
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "03-first-build.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "12-concurrency.md",
+     "15-project-voice.md",
+     "17-project-xiaozhi.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "31-official-lowpower.md",
+     "B-repo-index.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "wakeup",
+    "c": 1,
+    "files": [
+     "31-official-lowpower.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.016
+ },
+ {
+  "group": "掉电",
+  "kinds": 2,
+  "variants": [
+   {
+    "v": "断电",
+    "c": 26,
+    "files": [
+     "00b-hardware-words.md",
+     "05-display-lvgl.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "31-official-lowpower.md",
+     "C-glossary.md",
+     "D-module-cookbook.md"
+    ]
+   },
+   {
+    "v": "掉电",
+    "c": 1,
+    "files": [
+     "31-official-lowpower.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.037
+ },
+ {
+  "group": "分区表",
+  "kinds": 3,
+  "variants": [
+   {
+    "v": "分区",
+    "c": 114,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "09-storage.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "11-memory.md",
+     "13-project-doom.md",
+     "14-project-multipage.md",
+     "15-project-voice.md",
+     "16-project-pokewalk.md",
+     "17-project-xiaozhi.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "20-tutorial-image.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "29-official-wifi.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "分区表",
+    "c": 36,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "03-first-build.md",
+     "09-storage.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "14-project-multipage.md",
+     "17-project-xiaozhi.md",
+     "18-project-barbapapa.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "partition table",
+    "c": 2,
+    "files": [
+     "01-hardware.md",
+     "03-first-build.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.25
+ },
+ {
+  "group": "帧率",
+  "kinds": 2,
+  "variants": [
+   {
+    "v": "帧率",
+    "c": 2,
+    "files": [
+     "05-display-lvgl.md"
+    ]
+   },
+   {
+    "v": "FPS",
+    "c": 1,
+    "files": [
+     "05-display-lvgl.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.333
+ },
+ {
+  "group": "字库/字体",
+  "kinds": 3,
+  "variants": [
+   {
+    "v": "字体",
+    "c": 115,
+    "files": [
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "11-memory.md",
+     "14-project-multipage.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "20-tutorial-image.md",
+     "22-debugging.md",
+     "24-official-framework.md",
+     "25-official-display.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md"
+    ]
+   },
+   {
+    "v": "字库",
+    "c": 17,
+    "files": [
+     "03-first-build.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "09-storage.md",
+     "18-project-barbapapa.md",
+     "19-tutorial-chinese-font.md",
+     "22-debugging.md",
+     "C-glossary.md",
+     "D-module-cookbook.md"
+    ]
+   },
+   {
+    "v": "font",
+    "c": 1,
+    "files": [
+     "SUMMARY.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.135
+ },
+ {
+  "group": "队列",
+  "kinds": 3,
+  "variants": [
+   {
+    "v": "队列",
+    "c": 38,
+    "files": [
+     "05-display-lvgl.md",
+     "06-button.md",
+     "07-audio.md",
+     "09-storage.md",
+     "12-concurrency.md",
+     "15-project-voice.md",
+     "16-project-pokewalk.md",
+     "17-project-xiaozhi.md",
+     "22-debugging.md",
+     "24-official-framework.md",
+     "27-official-audio.md",
+     "A-api-cheatsheet.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "queue",
+    "c": 2,
+    "files": [
+     "12-concurrency.md"
+    ]
+   },
+   {
+    "v": "Queue",
+    "c": 1,
+    "files": [
+     "C-glossary.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.073
+ },
+ {
+  "group": "看门狗",
+  "kinds": 4,
+  "variants": [
+   {
+    "v": "看门狗",
+    "c": 17,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "10-network.md",
+     "10c-network-data.md",
+     "12-concurrency.md",
+     "13-project-doom.md",
+     "22-debugging.md",
+     "C-glossary.md",
+     "D-module-cookbook.md"
+    ]
+   },
+   {
+    "v": "WDT",
+    "c": 3,
+    "files": [
+     "00b-hardware-words.md",
+     "B-repo-index.md",
+     "C-glossary.md"
+    ]
+   },
+   {
+    "v": "watchdog",
+    "c": 2,
+    "files": [
+     "22-debugging.md"
+    ]
+   },
+   {
+    "v": "喂狗",
+    "c": 1,
+    "files": [
+     "12-concurrency.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.261
+ },
+ {
+  "group": "深睡/浅睡",
+  "kinds": 4,
+  "variants": [
+   {
+    "v": "深睡",
+    "c": 77,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "12-concurrency.md",
+     "15-project-voice.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "28-official-battery.md",
+     "30-official-ble.md",
+     "31-official-lowpower.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "deep sleep",
+    "c": 27,
+    "files": [
+     "03-first-build.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "31-official-lowpower.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "light sleep",
+    "c": 13,
+    "files": [
+     "08-battery-power.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "31-official-lowpower.md"
+    ]
+   },
+   {
+    "v": "浅睡",
+    "c": 7,
+    "files": [
+     "00b-hardware-words.md",
+     "05-display-lvgl.md",
+     "31-official-lowpower.md",
+     "D-module-cookbook.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.379
+ },
+ {
+  "group": "驱动",
+  "kinds": 3,
+  "variants": [
+   {
+    "v": "驱动",
+    "c": 31,
+    "files": [
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "07-audio.md",
+     "10-network.md",
+     "11-memory.md",
+     "18-project-barbapapa.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "27-official-audio.md",
+     "29-official-wifi.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md"
+    ]
+   },
+   {
+    "v": "driver",
+    "c": 1,
+    "files": [
+     "02-idf-crash-course.md"
+    ]
+   },
+   {
+    "v": "驱动程序",
+    "c": 1,
+    "files": [
+     "07-audio.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.061
+ },
+ {
+  "group": "SDK/框架",
+  "kinds": 4,
+  "variants": [
+   {
+    "v": "IDF",
+    "c": 113,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "02-idf-crash-course.md",
+     "03-first-build.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "12-concurrency.md",
+     "13-project-doom.md",
+     "14-project-multipage.md",
+     "15-project-voice.md",
+     "16-project-pokewalk.md",
+     "17-project-xiaozhi.md",
+     "18-project-barbapapa.md",
+     "20-tutorial-image.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "29-official-wifi.md",
+     "30-official-ble.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "框架",
+    "c": 34,
+    "files": [
+     "00-preface.md",
+     "03-first-build.md",
+     "05-display-lvgl.md",
+     "10b-provisioning.md",
+     "18-project-barbapapa.md",
+     "21-tutorial-audio.md",
+     "24-official-framework.md",
+     "25-official-display.md",
+     "26-official-button.md",
+     "27-official-audio.md",
+     "28-official-battery.md",
+     "29-official-wifi.md",
+     "30-official-ble.md",
+     "31-official-lowpower.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "SDK",
+    "c": 2,
+    "files": [
+     "03-first-build.md",
+     "17-project-xiaozhi.md"
+    ]
+   },
+   {
+    "v": "framework",
+    "c": 1,
+    "files": [
+     "SUMMARY.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.247
+ },
+ {
+  "group": "板级支持包",
+  "kinds": 2,
+  "variants": [
+   {
+    "v": "BSP",
+    "c": 93,
+    "files": [
+     "00-preface.md",
+     "00b-hardware-words.md",
+     "01-hardware.md",
+     "03-first-build.md",
+     "04-bsp.md",
+     "05-display-lvgl.md",
+     "06-button.md",
+     "07-audio.md",
+     "08-battery-power.md",
+     "10-network.md",
+     "10b-provisioning.md",
+     "10c-network-data.md",
+     "11-memory.md",
+     "14-project-multipage.md",
+     "15-project-voice.md",
+     "20-tutorial-image.md",
+     "21-tutorial-audio.md",
+     "22-debugging.md",
+     "23-whats-next.md",
+     "24-official-framework.md",
+     "25-official-display.md",
+     "A-api-cheatsheet.md",
+     "B-repo-index.md",
+     "C-glossary.md",
+     "D-module-cookbook.md",
+     "E-official-resources.md",
+     "SUMMARY.md"
+    ]
+   },
+   {
+    "v": "板级支持包",
+    "c": 1,
+    "files": [
+     "C-glossary.md"
+    ]
+   }
+  ],
+  "other_ratio": 0.011
+ }
+]

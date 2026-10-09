@@ -121,6 +121,10 @@ ESP32-PokemonGo/
 > “**commit 不能省**——`nvs_set_blob` 只写进缓存，
 > 不 commit 的话拔电就丢了，**而函数返回值是成功的**。”
 
+> 注：这里的“缓存”指 **NVS 在内存里的键值对镜像**，不是 CPU cache。
+> `nvs_set_blob` 只改这份内存镜像，`nvs_commit` 才真正落 Flash
+> （概念见第 9 章）。
+
 **教训 3：整块存比分开存原子性好。**
 
 > “整块约 2.2 KiB，NVS 的 blob 上限是 508000 字节——绰绰有余。
@@ -215,11 +219,11 @@ I2C  0x18 ES8311 音频 codec · 0x63 CW2017 电量计
 source tools/device/idf-env.sh     # 进 ESP-IDF 环境
 tools/device/fw.sh backup          # ★ 备份设备当前 flash（首次必做）
 tools/device/fw.sh build
-tools/device/fw.sh flash           # 没备份会拒绝烧写
+tools/device/fw.sh flash           # 没备份会拒绝烧录
 python3 tools/device/monitor.py
 ```
 
-**“没备份会拒绝烧写”**——这是本项目的一个设计决定。
+**“没备份会拒绝烧录”**——这是本项目的一个设计决定。
 它和小智项目“不备份”的态度相反（第 3.5 节提过）。
 **开发你自己的项目时，建议学 PokeWalk：先备份再烧。**
 
@@ -232,7 +236,7 @@ python3 tools/device/monitor.py
 | 开机自检 | `main.c` 的自检五连 |
 | 素材 PC 生成 + 设备解析 + 校验 | `assets.c` + `tools/` |
 | recovery 分区与 bootloader hook | `bootloader_components/` |
-| 备份优先的烧写流程 | `tools/device/fw.sh` |
+| 备份优先的烧录流程 | `tools/device/fw.sh` |
 
 ## 16.11 小结
 

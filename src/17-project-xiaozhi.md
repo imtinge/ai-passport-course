@@ -70,6 +70,9 @@ extern "C" void app_main(void)
 ## 17.3 核心架构：单线程事件循环
 
 > 源码：`main/application.cc`
+>
+> 术语提示：这里的“单线程”是描述小智这套架构的惯用说法，
+> 落到 ESP-IDF 里就是**一个任务**在跑主循环（本书统一叫“任务”，见第 2.8 节）。
 
 ```cpp
 void Application::Run() {
