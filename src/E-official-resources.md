@@ -231,7 +231,7 @@ git diff main...origin/demo/tetris-game -- main components
 
 本书按“你实际会去翻的东西”把它摊开成五层：
 
-```c
+```text
 1. 产品规格 / 实机测量  docs/hardware-design/specifications.zh_CN.md + 你自己量出来的数
 2. 源码（引脚）        components/bsp/include/bsp_pins.h   ← 板级事实的单一权威
 3. 源码（行为）        components/bsp/include/*.h + src/*.c ← 阻塞/线程/返回值看这里

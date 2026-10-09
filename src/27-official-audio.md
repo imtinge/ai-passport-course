@@ -15,7 +15,7 @@
 
 源码头部的注释**很重要**，是官方写给想复用这页的人看的警告（`demo_audio.c:1-5`）：
 
-```c
+```text
 // main/demo_audio.c —— 播 1kHz 方波 / 录 3 秒后回放。
 // 音频收发会阻塞较久,故放到独立任务里跑,不占用按键回调与 LVGL 任务。
 // Continuous BGM + UI/NVS needs feed-latency and Flash/cache checks; a tone alone

@@ -16,7 +16,7 @@
 
 ## 13.1 工程结构
 
-```c
+```text
 ai-passport-doom/
 ├── CMakeLists.txt          sdkconfig.defaults
 ├── partitions.csv          README.md

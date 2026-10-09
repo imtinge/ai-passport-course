@@ -37,7 +37,7 @@ bsp_display_backlight(100);
 
 ## 4.2 BSP 目录结构
 
-```c
+```text
 components/bsp/
 ├── CMakeLists.txt
 ├── idf_component.yml          # 托管依赖（esp_codec_dev、button 等）
@@ -64,7 +64,7 @@ components/bsp/
 
 这个文件值得单独说，因为它是“硬件事实的单一来源”：
 
-```c
+```text
 // components/bsp/include/bsp_pins.h
 // FoloToy AI Passport 硬件引脚与参数的【单一事实来源】。换板/改硬件只需改这一个文件。
 // 每项都注明"为什么是这个值",便于二次开发时判断能不能改。
@@ -197,7 +197,7 @@ esp_err_t bsp_i2c_prepare_deep_sleep(void);
 
 **DOOM 项目**：整个仓库只有 36 个文件，它自己写了一个 6 个函数的 `bsp_doom`：
 
-```c
+```text
 bsp_display_init        bsp_display_panel
 bsp_display_backlight   bsp_display_draw_bitmap
 bsp_button_init         bsp_button_read
@@ -216,7 +216,7 @@ BSP 里的注释是社区踩坑的沉淀，你自己重写一遍会在同一个�
 
 官方 BSP 只有 6 个头文件。有的 fork 会往上加，比如 `pax-zhang` 的 BSP：
 
-```c
+```text
 bsp_audio.h  bsp_battery.h  bsp_ble.h  bsp_button.h
 bsp_display.h  bsp_i2c.h  bsp_pins.h  bsp_pm.h  bsp_wifi.h
 ```
@@ -224,7 +224,7 @@ bsp_display.h  bsp_i2c.h  bsp_pins.h  bsp_pm.h  bsp_wifi.h
 多了 `bsp_ble.h`（蓝牙）、`bsp_pm.h`（电源管理）、`bsp_wifi.h`（Wi-Fi）。
 它的 Wi-Fi 部分就有 20 多个函数：
 
-```c
+```text
 bsp_wifi_init / connect / scan / forget / state / ssid / ip
 bsp_wifi_enabled / has_saved / saved_pass / set_enabled
 bsp_wifi_set_auto_connect / auto_connect

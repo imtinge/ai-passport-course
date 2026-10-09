@@ -623,7 +623,7 @@ idf_component_register(SRCS "main.c" INCLUDE_DIRS "."
 
 wifi_prov_mgr_config_t cfg = {
     .scheme = wifi_prov_scheme_ble,
-    .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM, // 配完释放 BT
+    .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BLE, // 配完释放 BLE
 };
 ESP_ERROR_CHECK(wifi_prov_mgr_init(cfg));
 esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, &prov_event, NULL);

@@ -16,7 +16,7 @@
 
 ## 14.1 工程结构
 
-```c
+```text
 pax-zhang__ai-passport/
 ├── components/bsp/          ← 扩展版 BSP（9 个头文件）
 │   ├── include/ bsp_audio.h bsp_battery.h bsp_ble.h bsp_button.h
@@ -170,7 +170,7 @@ void app_main(void)
 - **背光在建 UI 之前点亮**；
 - **建 UI 时加锁**。
 
-## 14.5 源码里当注释写下的三个坑
+## 14.5 源码里当注释写下的五个坑
 
 这个项目最宝贵的不是代码，是**那些解释“为什么”的注释**：
 

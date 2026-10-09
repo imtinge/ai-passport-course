@@ -16,7 +16,7 @@
 
 源码顶部一句话点明设计意图（`demo_display.c:1-2`）：
 
-```c
+```text
 // main/demo_display.c —— 色块 + 背光调光。
 // 用 LVGL 铺纯色(而非底层 draw_bitmap),这样和菜单共用同一套屏幕管理。
 ```

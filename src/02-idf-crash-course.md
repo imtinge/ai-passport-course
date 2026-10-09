@@ -426,8 +426,8 @@ size_t len = _binary_gen1_bin_end - _binary_gen1_bin_start;
 | `malloc(150 * 1024)` 没问题 | 会失败。最大连续块往往 < 8 KB |
 | 递归没问题 | 栈只有几 KB，别递归，别在栈上开大数组 |
 | `float`/`double` 随便用 | ESP32-C3 无硬件浮点单元，软件模拟很慢，能免则免 |
-| `printf("%f")` 能打印 | 默认 **newlib 的 `%f` 被裁掉了**，打不出来 |
-| `clock()` 能用 | **恒返回 0**（有项目被这个坑到，见第 13 章） |
+| `printf("%f")` 能打印 | 仅启用 newlib nano 格式（`CONFIG_LIBC_NEWLIB_NANO_FORMAT=y`，ESP32-C2 默认开、C3 默认**不**开）时 `%f` 被裁；本项目默认完整 newlib，`%f` 可用 |
+| `clock()` 能用 | ESP-IDF 上 `clock()` 不保证返回进程 CPU 时间（DOOM 项目用 `--wrap=clock` 自行提供）；计时请改用 `esp_timer` / `gettimeofday` |
 | `malloc/free` 反复用没事 | 会碎片化，社区里因此出现过“只停不播”的 bug |
 | 未对齐访问只是慢 | 在 RISC-V 上是**异常**，不是慢速 |
 

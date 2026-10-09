@@ -80,7 +80,7 @@ main/assets/barbapapa/bbp_font_20.c   22,906 字节
 
 整个流程分五步，其中**三步在 PC 上做**，只有后两步碰板子：
 
-```c
+```text
 ① 选一个合法授权的 TTF/OTF 字体
 ② 列出你要显示的汉字 → 转成 Unicode 码点
 ③ lv_font_conv 生成 .c              ← PC
@@ -444,7 +444,7 @@ for (const char *p = s; *p; ) {
 
 ## 19.6 不要关掉占位符
 
-```c
+```text
 CONFIG_LV_USE_FONT_PLACEHOLDER=y
 ```
 

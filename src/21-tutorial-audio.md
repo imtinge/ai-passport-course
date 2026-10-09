@@ -80,7 +80,7 @@ bsp_audio_write(pcm, bytes);            // 4. 送数据（阻塞！）
 
 正确的结构是**“下单 / 干活”分离**：
 
-```c
+```text
 按键回调（快）  ──xTaskNotify(命令)──▶  音频 worker 任务（慢，阻塞也无所谓）
                                             │
                                         bsp_audio_write()

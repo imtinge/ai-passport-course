@@ -16,7 +16,7 @@
 
 源码注释点明核心（`demo_button.c:1-2`）：
 
-```c
+```text
 // main/demo_button.c —— 按键事件流 + 实时 ADC 电压。
 // 电压显示是本页的核心:换了分压/上拉阻值的开发者靠它重标 BSP_BTN_MV_TABLE。
 ```

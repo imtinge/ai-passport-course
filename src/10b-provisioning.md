@@ -116,7 +116,7 @@ void start_provisioning(void)
 {
     wifi_prov_mgr_config_t cfg = {
         .scheme = wifi_prov_scheme_ble,
-        .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM, // 配完网释放 BT
+        .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BLE, // 配完网释放 BLE
     };
     ESP_ERROR_CHECK(wifi_prov_mgr_init(cfg));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID,
