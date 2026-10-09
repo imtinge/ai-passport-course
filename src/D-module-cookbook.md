@@ -532,24 +532,56 @@ esp_wifi_scan_start(NULL, false);          // 非阻塞
 
 // scan_done 回调里：
 uint16_t total = 0;
-esp_wifi_scan_get_ap_num(&total);
-wifi_ap_record_t *recs = malloc(total * sizeof(wifi_ap_record_t));
-esp_wifi_scan_get_ap_records(&total, recs);
+esp_err_t e = esp_wifi_scan_get_ap_num(&total);
+if (e != ESP_OK || total == 0) { ESP_LOGW(TAG, "no ap found"); return; }
+
+// ★ 用 sizeof(*recs) 而不是 sizeof(wifi_ap_record_t)：类型改了也不会写错
+wifi_ap_record_t *recs = calloc(total, sizeof(*recs));
+if (!recs) {
+    // 这板最大连续块 < 8 KB（见 D.13），扫到几十个 AP 时失败是常态，不是极端情况
+    ESP_LOGE(TAG, "alloc %u B failed", (unsigned)(total * sizeof(*recs)));
+    return;
+}
+e = esp_wifi_scan_get_ap_records(&total, recs);
+if (e == ESP_OK) {
+    for (uint16_t i = 0; i < total; i++) { /* 用 recs[i] */ }
+} else {
+    ESP_LOGE(TAG, "get ap records: %s", esp_err_to_name(e));
+}
+free(recs);          // ★ 扫描会反复触发，漏一次就是持续泄漏
 ```
 
 ### 连接
 
 ```c
 wifi_config_t cfg = { 0 };
-strcpy((char *)cfg.sta.ssid, "你的SSID");
-strcpy((char *)cfg.sta.password, "你的密码");
+// ★ 用 snprintf，别用 strcpy：cfg 在栈上，ssid 只有 32 字节
+snprintf((char *)cfg.sta.ssid,     sizeof(cfg.sta.ssid),     "%s", ssid);
+snprintf((char *)cfg.sta.password, sizeof(cfg.sta.password), "%s", pass);
 cfg.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
-esp_wifi_set_config(WIFI_IF_STA, &cfg);
-esp_wifi_connect();
+
+esp_err_t e = esp_wifi_set_config(WIFI_IF_STA, &cfg);
+if (e != ESP_OK) { ESP_LOGE(TAG, "set_config: %s", esp_err_to_name(e)); return; }
+e = esp_wifi_connect();
+if (e != ESP_OK) { ESP_LOGE(TAG, "connect: %s", esp_err_to_name(e)); return; }
 ```
 
 > **拿到 `IP_EVENT_STA_GOT_IP` 才算真正联网**，不是 `esp_wifi_connect()` 返回就算。
 > 断线重连要带退避与上限，别无限狂连。
+
+**为什么是 `snprintf` 而不是 `strcpy` / `strncpy`**：
+
+写死 `"你的SSID"` 时三者都不会溢出——但这段代码是要被复制走的，你迟早会把常量
+换成从 NVS 或配网读来的字符串，那时 `strcpy` 就是**栈溢出**（`cfg` 是栈上局部变量）。
+
+| 写法 | 截断 | 补 NUL | 结论 |
+| --- | --- | --- | --- |
+| `strcpy(dst, src)` | 不截断 | — | ❌ 超长就写穿，别用 |
+| `strncpy(dst, src, n)` | 截断 | **正好填满时不补** | ⚠ 会得到一个没有终止符的字符串，后续读它就越界 |
+| `snprintf(dst, n, "%s", src)` | 截断 | **一定补** | ✅ 推荐 |
+
+`strncpy` 那个坑很隐蔽：目标 32 字节、源正好 31 字符时，它**不会**写 `'\0'`，
+后面 `strlen` / `ESP_LOGI("%s")` 就会一路读下去。用 `snprintf` 没这个顾虑。
 
 ### 凭据与重连退避
 
@@ -785,9 +817,9 @@ ESP_LOGI(TAG, "free=%u largest=%u",
     heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
     heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
 
-// 任务栈水位线（单位 word，C3 上 ×4 字节）
-UBaseType_t left = uxTaskGetStackHighWaterMark(NULL);
-ESP_LOGI(TAG, "stack min free = %u words", (unsigned)left);
+// 任务栈水位线：ESP-IDF 返回【字节】，不是"字"（见下方讲解）
+size_t left = (size_t)uxTaskGetStackHighWaterMark(NULL);
+ESP_LOGI(TAG, "stack min free = %u bytes", (unsigned)left);
 ```
 
 **讲解**：
@@ -797,7 +829,14 @@ ESP_LOGI(TAG, "stack min free = %u words", (unsigned)left);
 - 无 PSRAM 的基线数字：可用堆约 **230 KB**，**最大连续块 < 8 KB**；
 - 崩溃日志出现 `Stack canary watchpoint triggered (任务名)` = 该任务栈溢出，
   调大 `xTaskCreate` 的栈参数；
-- `idf.py size-components` 看哪个组件吃 Flash/RAM。
+- `idf.py size-components` 看哪个组件吃 Flash/RAM；
+- ⚠ **水位线返回的是字节，不是"字"，别再乘 4。** 官方头文件
+  `freertos/FreeRTOS-Kernel/include/freertos/task.h` 里两处都特意写了
+  *"in bytes (as opposed to words in the standard FreeRTOS documentation)"*——
+  ESP-IDF 在这里**故意和原生 FreeRTOS 不一样**。这和第 12.8 节强调的
+  “`xTaskCreate` 栈参数是字节”是**同一套口径**：创建时给 4096、实测剩 1024，
+  两者直接可比，不用换算。（Ubuntu 上写 FreeRTOS 的习惯在这里会算错 4 倍，
+  把 1 KB 余量看成 4 KB，结果栈溢出了还以为很宽裕。）
 
 ---
 

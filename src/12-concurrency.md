@@ -218,10 +218,120 @@ while (s_busy) {           // 编译器看见：这循环里没人改 s_busy 啊
 
 什么时候需要忙等：给 codec 上电后要等几 µs 才能配寄存器、
 复位某个外设后等它稳定——这种微秒级时序 `vTaskDelay(1)` 粒度不够
-（1 个 tick 通常 10 ms），只能忙等。
+（1 个 tick 有多长见下面的说明，本项目是 1 ms，但 µs 级等不起），只能忙等。
 代价是这几十 µs 里 CPU 什么都不干，所以**只能用于极短等待**。
 
 一句话判断：**等 1 个 tick 以上的，永远用 `vTaskDelay`；等不到 1 个 tick 的，才用忙等。**
+
+### ⚠ `vTaskDelay(1)` 是 1 个 tick，不是 1 毫秒
+
+一个 tick 到底多长，由 `CONFIG_FREERTOS_HZ` 决定：
+
+| 配置 | 1 个 tick | 出处 |
+| --- | --- | --- |
+| 本项目 | **1 ms** | `sdkconfig:1632` → `CONFIG_FREERTOS_HZ=1000` |
+| IDF 默认值 | 10 ms | `CONFIG_FREERTOS_HZ=100` |
+
+**这不是咬文嚼字。** 你只要改一次这个配置，所有 `vTaskDelay` 的真实时长就跟着变，
+而代码一行没动。表现出来是"画面变卡了""按键响应慢了"——查起来非常折磨，
+因为你会怀疑是自己刚写的逻辑退化了，实际是时间基准变了。
+
+所以：**想表达"等多少毫秒"就写 `vTaskDelay(pdMS_TO_TICKS(ms))`**，让宏替你换算，
+配置怎么改都不会错；只有"让出一个最小时间片"这种**不在乎具体时长**的场景，
+才用裸 `vTaskDelay(1)`——第 12.7 节的喂看门狗就是这种用法，那里要的是"让出"，
+不是"等 1 毫秒"。
+
+### 自己写中断时的四条硬规则（ISR）
+
+前面讲的都是**任务之间**的事。但如果你要给一个传感器接根中断线、自己写 ISR
+（中断服务程序），规则会**整个反过来**——而且违反它们**不会编译报错**，
+等现象出来已经是随机死机了。靠试错学不会，先看四条：
+
+| 规则 | 违反的后果 |
+| --- | --- |
+| 用 `xQueueSendFromISR`，不能用 `xQueueSend` | 普通版会试图阻塞等待，而中断上下文里根本没有“等待”这回事 |
+| `FromISR` 之后要 `portYIELD_FROM_ISR(...)` | 不写的话被唤醒的高优先级任务不会立刻切换，表现为“响应慢一拍” |
+| ISR 栈只有 **1536 字节** | 开个像样的数组就爆，而且**没有**任务栈那种 canary 提示 |
+| ISR 里**不能** `ESP_LOG` / `malloc` / `vTaskDelay` | 日志内部有锁、malloc 不可重入 → 偶发死锁，极难复现 |
+
+**关于 `IRAM_ATTR`**（这条最容易被笼统地说错，所以单独讲）：
+
+很多教程会说“ISR 一定要加 `IRAM_ATTR`”。理由是真实的——**Flash 擦写期间
+（OTA、NVS 写入）整个 cache 会被禁用**，那一刻 CPU 取不到 Flash 里的指令，
+如果 ISR 代码恰好在 Flash 里，中断一来就崩。
+
+但对**本书这块板的 GPIO 中断**，官方给出的是例外。出处
+`esp_driver_gpio/include/driver/gpio.h`（`gpio_install_isr_service` 的注释）：
+
+> The pin ISR handlers **no longer need to be declared with IRAM_ATTR**,
+> unless you pass the `ESP_INTR_FLAG_IRAM` flag when allocating the
+> ISR in `gpio_install_isr_service()`.
+
+也就是说：用 `gpio_isr_handler_add()` 注册的 GPIO 中断，**驱动已经替你处理好了，
+默认不用加**；只有你主动传了 `ESP_INTR_FLAG_IRAM`，才要求 handler 也带上。
+别照抄老教程无脑加——加了没坏处，但你会误以为不加就一定会崩，而这个结论对
+GPIO 中断并不成立。
+
+一个标准写法（ISR 只做一件事：把数据丢给任务）：
+
+```c
+static QueueHandle_t s_gpio_queue;
+
+// 用 gpio_isr_handler_add 注册，handler 默认不需要 IRAM_ATTR（见上方说明）
+static void gpio_isr_handler(void *arg)
+{
+    uint32_t gpio_num = (uint32_t)arg;
+    BaseType_t hp_task_awoken = pdFALSE;
+
+    // 只做一件事：入队。不打印、不 malloc、不延时、不开数组。
+    xQueueSendFromISR(s_gpio_queue, &gpio_num, &hp_task_awoken);
+
+    // ★ 有高优先级任务被唤醒就立刻切换，否则要等到下一个 tick 才轮到它
+    if (hp_task_awoken == pdTRUE) {
+        portYIELD_FROM_ISR(hp_task_awoken);
+    }
+}
+
+static void gpio_task(void *arg)
+{
+    (void)arg;
+    uint32_t gpio_num;
+    for (;;) {
+        if (xQueueReceive(s_gpio_queue, &gpio_num, portMAX_DELAY) == pdTRUE) {
+            // 真正的活在这里干：日志、malloc、vTaskDelay 都恢复了
+            ESP_LOGI(TAG, "gpio %u triggered", (unsigned)gpio_num);
+        }
+    }
+}
+
+void app_main(void)
+{
+    s_gpio_queue = xQueueCreate(10, sizeof(uint32_t));
+    // ...gpio_config() 配置输入/上拉/中断类型，此处省略...
+
+    gpio_install_isr_service(0);                 // 整个程序调一次即可
+    gpio_isr_handler_add(GPIO_NUM_3, gpio_isr_handler, (void *)GPIO_NUM_3);
+    xTaskCreate(gpio_task, "gpio", 4096, NULL, 5, NULL);
+}
+```
+
+**ISR 栈为什么只有 1536 字节**：`CONFIG_FREERTOS_ISR_STACKSIZE` 的 IDF 默认值是
+**1536**（本项目 `sdkconfig:1667` 也是这个值），而任务栈通常给 4096。
+更麻烦的是——任务栈溢出会打印 `Stack canary watchpoint triggered (任务名)`
+这种能直接定位的提示（第 12.8 节），**ISR 栈溢出没有**。它的表现是毫无规律的崩溃，
+日志里什么线索都不留。所以 ISR 里不要开任何像样的数组、不要深递归、
+也不要调用层级很深的函数。
+
+**为什么非要走队列**：ISR 的硬性要求是“越快越好”，而干活要用到日志、内存分配、
+延时这些在 ISR 里被禁的东西。把它们推给一个阻塞在 `xQueueReceive` 上的任务，
+两边都满足了——这和 12.2 节“入队 + 独立任务”是同一个模式，只是生产者从
+**回调**换成了**中断**。
+
+**本书为什么前面没提 ISR**：板载按键走了 button 组件（第 6 章），
+Wi-Fi / 蓝牙的中断在协议栈里，这几层都替你封装好了。等你接一个
+**没有现成组件的外设**（比如输出脉冲的传感器、需要精确计时的编码器），
+这一节就是必经之路。第 8 章深睡唤醒那里是全书最接近“要自己面对中断”的地方，
+可回头对照。
 
 ## 12.3 LVGL 锁：唯一的硬性规则
 

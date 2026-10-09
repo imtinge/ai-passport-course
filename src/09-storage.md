@@ -120,6 +120,90 @@ PokeWalk 的存档是**整个结构体当一个 blob**（约 2.2 KB）：
 
 如果你的状态字段之间有内在一致性要求，**整块存比分开存更不容易错**。
 
+### 整块存结构体时必须做的三件事
+
+整块存有个隐含前提：**读的时候，结构体的内存布局必须和写的时候一模一样**。
+只要固件升级过一次、结构体改过一次，这个前提就可能不成立——
+而它出错的方式不是报错，是**读出一组看似合理的错数据**。
+
+**① `sizeof(save)` 不等于各字段字节之和**
+
+编译器会在字段之间插 padding（对齐填充）：
+
+```c
+typedef struct {
+    uint8_t  a;      // 1 字节
+    uint32_t b;      // 4 字节
+} demo_t;
+// sizeof(demo_t) == 8，不是 5
+```
+
+`a` 后面空了 3 字节，好让 `b` 落在 4 字节对齐的位置上。所以别拿字段宽度去推算
+“这个结构体占多少”——`sizeof` 给的是**含 padding 的真实大小**，存多少字节以它为准是对的，
+但要知道你存的比字段之和更多。
+
+**② 在中间插一个字段，老存档就全错位了**
+
+最隐蔽的一个。假设 v1 的存档存了一堆数据，然后新版固件在中间插了个字段：
+
+```c
+// v1
+typedef struct { uint32_t steps; uint16_t level; } save_t;
+// v2：在中间插了一个字段
+typedef struct { uint32_t steps; uint8_t skin; uint16_t level; } save_t;
+```
+
+老设备升级后，v2 的代码会把老数据里 `level` 的位置，读成 `skin` + `level` 的一半。
+**不报错，不崩溃**，就是数值莫名其妙——玩家会以为“存档坏了”，你查很久也查不到原因。
+
+**③ 让数据自己说明“我是哪一版”**
+
+下面这段是**示范写法**（要点是这三个字段的思路，照搬到自己的结构体上即可）：
+
+```c
+#define SAVE_MAGIC   0x504F4B45UL   // "POKE"
+#define SAVE_VERSION 2              // 结构体一改就 +1
+
+typedef struct {
+    uint32_t magic;      // 是不是我们的数据
+    uint16_t version;    // 哪一版的数据
+    uint16_t size;       // 存的时候 sizeof 是多少
+    uint32_t steps;
+    uint16_t level;
+} save_t;
+
+static bool save_load(nvs_handle_t h, save_t *out)
+{
+    save_t tmp;
+    size_t len = sizeof(tmp);
+    if (nvs_get_blob(h, "state", &tmp, &len) != ESP_OK) return false;
+
+    // 三项全对才认；任何一项不对，都当"没有存档"走默认值
+    if (tmp.magic   != SAVE_MAGIC   ||
+        tmp.version != SAVE_VERSION ||
+        tmp.size    != sizeof(tmp)) {
+        ESP_LOGW(TAG, "存档不兼容（version=%u size=%u），用默认值",
+                 (unsigned)tmp.version, (unsigned)tmp.size);
+        return false;
+    }
+    *out = tmp;
+    return true;
+}
+```
+
+三个字段各管一件事，**不要只留一个**：
+
+| 字段 | 回答的问题 | 只留它会怎样 |
+| --- | --- | --- |
+| `magic` | “这是不是我们的数据？” | 别的 APP 写到同一个 key 上也能蒙混通过 |
+| `version` | “这是哪一版的数据？” | 这才是 ② 那个错位问题的正解 |
+| `size` | “存的时候结构体多大？” | 只改了 padding（比如动了对齐）而忘了改版本号时，靠它兜住 |
+
+⚠ **别把“魔数”和“版本号”混为一谈。** 第 31 章里那个 `0x464F4C4F`（`"FOLO"`）
+是**魔数**——它用来区分“冷启动”还是“从 deep sleep 唤醒”，回答的是
+“这份数据是不是我们刚放进去的”。它**不是**版本号：你加个字段时它不会变，
+也就挡不住 ② 里的错位。两件事，各留一个字段。
+
 ## 9.3 素材：四种方案怎么选
 
 | 方案 | 适合 | 上限 | 复杂度 |
