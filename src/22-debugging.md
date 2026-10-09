@@ -29,6 +29,7 @@
 | 按键不灵 / 误触 / 长按无效 | 6.3 回调里不许干活、6.6 两个真实坑 |
 | 音频播到一半卡死 / 无法打断 | 7.3 播放必须在自己任务里、21.4 分块送数据 |
 | 改了字体/文案/主题后缺字 | 19.6 不要关掉占位符、19.5 验证覆盖 |
+| 外设上电瞬间“被选中”一次 / 初始化时序诡异 | 1.5 上电毛刺（MTCK/MTDO/GPIO10/U0RXD 约 5 ns 低毛刺，规格书表 2-2） |
 
 > 这张表是按“新手最常踩”排的，不是全集。子系统级的完整排障表在各章末尾
 > （如 10.11、10b.9、10c.8、19.7、20.9），那里更细。
@@ -570,6 +571,13 @@ VS Code  ──esp-gdb──▶  GDB 客户端
 > “同一个 panic 复现不了”这三类问题时，日志已经到极限了——这时断点能直接看到
 > “那个变量到底是什么值”。**但 99% 的问题（第 22.3 节那张表里的）用日志就够了**，
 > 别为了调一个打印语句去折腾工具链。
+
+**内置 JTAG 之外还有真 JTAG 管脚**：芯片本身把 JTAG 引到 GPIO4（MTMS）、
+GPIO5（MTDI）、GPIO6（MTCK）、GPIO7（MTDO）——那是给“用外部 JTAG 调试器”留的。
+本板这四根脚**已被外设占用**（表 2-7：GPIO4=I2S DIN、GPIO5=I2S BCLK、
+GPIO6=I2S MCLK、GPIO7=I2C SCL），而且**根本不需要外部调试器**：
+内置 USB-Serial-JTAG 就在 GPIO18/19 那根 USB 线上。你唯一的动作是
+上面第 1 步把 OpenOCD 板型选对。（规格书 §2.3.4 / 附录 F.4）
 
 > 📖 **延伸阅读**：[官方 JTAG 调试指南](https://docs.espressif.com/projects/esp-idf/zh_CN/v5.5.3/esp32c3/api-guides/jtag-debugging/index.html) ·
 > [OpenOCD 故障排查](https://github.com/espressif/openocd-esp32/wiki/Troubleshooting-FAQ) ·

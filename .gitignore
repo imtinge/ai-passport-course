@@ -15,3 +15,4 @@ snippets/.aip_repo
 # Python 缓存
 __pycache__/
 *.pyc
+_audit/pdf/

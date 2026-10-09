@@ -401,6 +401,9 @@ ESP32-C3 **几乎不可能真正变砖**——bootloader 在出厂 ROM 里，芯
    ⚠️ **三个功能键接在 GPIO0 的 ADC 分压网络上，不能当 BOOT 键用**——
    别照抄“按住 BOOT 再按 EN”的老教程；
    正常情况 esptool 会通过原生 USB-Serial-JTAG 自动复位进下载模式，无需手动操作；
+   （完整启动模式表：GPIO9=1 且 GPIO8=1 走正常 SPI 启动；
+   GPIO9=0 且 GPIO8=1 进 Joint Download Boot。Strapping 脚共三个：
+   GPIO2、GPIO8、GPIO9——见规格书表 3-3 与附录 F.4。）
 3. 整片刷 `full.bin` 让三个镜像回到一致状态；
 4. 还不行就降波特率：`-b 115200`；
 5. 用 `flash_id` 判断芯片本身是否活着——能打印 `Flash size: 8MB` 就说明

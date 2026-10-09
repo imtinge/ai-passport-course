@@ -70,3 +70,5 @@
 - [C. 术语表](C-glossary.md)
 - [D. 分模块常用代码手册](D-module-cookbook.md)
 - [E. 官方与社区资源地图](E-official-resources.md)
+- [F. 官方规格速查：本书用到的每个数字](F-official-spec.md)
+- [G. 反常识清单：PC 直觉在这块板上不成立的地方](G-anti-intuition.md)
